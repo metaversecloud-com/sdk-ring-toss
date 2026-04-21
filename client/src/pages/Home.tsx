@@ -62,6 +62,14 @@ export const Home = () => {
         const parsed = JSON.parse(event.data);
         if (parsed?.data?.gameState) {
           dispatch!({ type: SET_GAME_STATE, payload: { gameState: parsed.data.gameState, error: "" } });
+
+          // When game ends, re-fetch full state to get updated badges/inventory
+          if (parsed.data.gameState.gameStatus === "game-over") {
+            backendAPI
+              .get("/game-state")
+              .then((response) => setGameState(dispatch, response.data))
+              .catch(() => {});
+          }
         }
       } catch {
         // Ignore parse errors (e.g., initial {success:true} confirmation)
@@ -106,6 +114,14 @@ export const Home = () => {
     async (peg: PegPosition, hit: boolean) => {
       const response = await backendAPI.put("/toss", { peg, hit });
       setGameState(dispatch, response.data);
+
+      // When game ends on this toss, re-fetch to get updated badges/inventory
+      if (response.data?.gameState?.gameStatus === "game-over") {
+        backendAPI
+          .get("/game-state")
+          .then((res) => setGameState(dispatch, res.data))
+          .catch(() => {});
+      }
     },
     [dispatch],
   );

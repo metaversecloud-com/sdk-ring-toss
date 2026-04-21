@@ -54,7 +54,9 @@ export const GameOver = ({ gameState, profileId, onReset, isLoading }: GameOverP
 
       <PageFooter>
         <button className="btn" disabled={isLoading} onClick={onReset}>
-          Play Again
+          {playerRed?.profileId === profileId || playerBlue?.profileId === profileId
+            ? "Play Again"
+            : "Reset"}
         </button>
       </PageFooter>
     </div>

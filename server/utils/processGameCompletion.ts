@@ -1,6 +1,7 @@
 import { Credentials } from "../types/Credentials.js";
 import { getVisitor } from "./getVisitor.js";
 import { awardBadge } from "./awardBadge.js";
+import { Visitor } from "./topiaInit.js";
 import {
   GameState,
   PlayerColor,
@@ -123,6 +124,19 @@ export const processGameCompletion = async ({
   };
 
   await Promise.allSettled([awardForPlayer("red"), awardForPlayer("blue")]);
+
+  // Trigger crown particle for the winning visitor
+  if (winner !== "tie") {
+    const winningPlayer = winner === "red" ? gameState.playerRed : gameState.playerBlue;
+    if (winningPlayer) {
+      const winnerVisitor = Visitor.create(winningPlayer.visitorId, credentials.urlSlug, {
+        credentials: { ...credentials, visitorId: winningPlayer.visitorId, interactiveNonce: winningPlayer.interactiveNonce },
+      });
+      winnerVisitor
+        .triggerParticle({ name: "crown_float", duration: 5 })
+        .catch(() => console.warn("Failed to trigger crown particle for winner"));
+    }
+  }
 
   return { callerVisitorInventory };
 };
