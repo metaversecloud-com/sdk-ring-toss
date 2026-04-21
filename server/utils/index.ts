@@ -10,5 +10,6 @@ export * from "./getVisitor.js";
 export * from "./getVisitorBadges.js";
 export * from "./inventoryCache.js";
 export * from "./processGameCompletion.js";
+export * from "./sseManager.js";
 export * from "./standardizeError.js";
 export * from "./topiaInit.js";

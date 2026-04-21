@@ -1,40 +1,32 @@
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 
 // components
 import { BadgesDisplay, GameBoard, GameInProgress, GameLobby, GameOver, PageContainer } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
-import { ErrorType, PegPosition } from "@/context/types";
+import { ErrorType, PegPosition, SET_GAME_STATE } from "@/context/types";
 
 // utils
 import { backendAPI, setErrorMessage, setGameState } from "@/utils";
 
 type Tab = "game" | "badges";
 
+const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
 export const Home = () => {
   const dispatch = useContext(GlobalDispatchContext);
   const { hasInteractiveParams, gameState, profileId, badges, visitorInventory } = useContext(GlobalStateContext);
+  const [searchParams] = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("game");
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Poll for game state updates (lobby: detect second player joining, in-progress: opponent turns)
-  useEffect(() => {
-    if (!hasInteractiveParams || !gameState) return;
-    if (gameState.gameStatus !== "waiting" && gameState.gameStatus !== "in-progress") return;
-
-    const interval = setInterval(() => {
-      backendAPI
-        .get("/game-state")
-        .then((response) => setGameState(dispatch, response.data))
-        .catch(() => {});
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [hasInteractiveParams, gameState?.gameStatus, gameState?.currentTurn]);
-
+  // Initial game state fetch
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
@@ -44,6 +36,53 @@ export const Home = () => {
         .finally(() => setIsLoading(false));
     }
   }, [hasInteractiveParams]);
+
+  // SSE connection — replaces polling
+  useEffect(() => {
+    if (!hasInteractiveParams) return;
+
+    // Build SSE URL with credentials from search params
+    const params = new URLSearchParams();
+    const credentialKeys = [
+      "assetId", "displayName", "identityId", "interactiveNonce",
+      "interactivePublicKey", "profileId", "sceneDropId", "uniqueName",
+      "urlSlug", "username", "visitorId",
+    ];
+    for (const key of credentialKeys) {
+      const val = searchParams.get(key);
+      if (val) params.set(key, val);
+    }
+
+    const sseUrl = `/api/sse?${params.toString()}`;
+    const eventSource = new EventSource(sseUrl);
+    eventSourceRef.current = eventSource;
+
+    eventSource.onmessage = (event) => {
+      try {
+        const parsed = JSON.parse(event.data);
+        if (parsed?.data?.gameState) {
+          dispatch!({ type: SET_GAME_STATE, payload: { gameState: parsed.data.gameState, error: "" } });
+        }
+      } catch {
+        // Ignore parse errors (e.g., initial {success:true} confirmation)
+      }
+    };
+
+    eventSource.onerror = () => {
+      console.warn("SSE connection error — will auto-reconnect");
+    };
+
+    // Heartbeat to keep connection alive
+    heartbeatRef.current = setInterval(() => {
+      backendAPI.post("/heartbeat").catch(() => {});
+    }, HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      eventSource.close();
+      eventSourceRef.current = null;
+      if (heartbeatRef.current) clearInterval(heartbeatRef.current);
+    };
+  }, [hasInteractiveParams, searchParams, dispatch]);
 
   const handleJoin = useCallback(async () => {
     setActionLoading(true);
@@ -84,10 +123,7 @@ export const Home = () => {
     setActionLoading(true);
     backendAPI
       .put("/reset")
-      .then((response) => {
-        setGameState(dispatch, response.data);
-        // After reset, the server auto-rejoins the resetting player as red
-      })
+      .then((response) => setGameState(dispatch, response.data))
       .catch((error) => setErrorMessage(dispatch, error as ErrorType))
       .finally(() => setActionLoading(false));
   }, [dispatch]);

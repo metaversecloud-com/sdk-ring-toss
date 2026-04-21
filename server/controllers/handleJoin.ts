@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset } from "@utils/index.js";
+import { errorHandler, getCredentials, getDroppedAsset, sseManager } from "@utils/index.js";
 import { GameState } from "@shared/types/GameTypes.js";
 
 export const handleJoin = async (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { assetId, displayName, profileId, visitorId } = credentials;
+    const { assetId, displayName, profileId, urlSlug, visitorId } = credentials;
 
     const droppedAsset = await getDroppedAsset(credentials);
     const gameState = droppedAsset.dataObject as GameState;
@@ -43,6 +43,12 @@ export const handleJoin = async (req: Request, res: Response) => {
     }
 
     await droppedAsset.fetchDataObject();
+
+    sseManager.publish({
+      event: "player_joined",
+      assetId, urlSlug, visitorId, interactiveNonce: credentials.interactiveNonce,
+      data: { gameState: droppedAsset.dataObject },
+    });
 
     return res.json({ success: true, gameState: droppedAsset.dataObject });
   } catch (error) {

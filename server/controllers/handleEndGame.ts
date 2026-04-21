@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset, getVisitor, processGameCompletion } from "@utils/index.js";
+import { errorHandler, getCredentials, getDroppedAsset, getVisitor, processGameCompletion, sseManager } from "@utils/index.js";
 import { GameState, PlayerColor } from "@shared/types/GameTypes.js";
 
 export const handleEndGame = async (req: Request, res: Response) => {
@@ -54,6 +54,13 @@ export const handleEndGame = async (req: Request, res: Response) => {
     });
 
     await droppedAsset.fetchDataObject();
+
+    sseManager.publish({
+      event: "game_ended",
+      assetId, urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      data: { gameState: droppedAsset.dataObject },
+    });
+
     return res.json({
       success: true,
       gameState: droppedAsset.dataObject,

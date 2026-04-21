@@ -5,6 +5,7 @@ import {
   getDroppedAsset,
   getGameAssets,
   getVisitor,
+  sseManager,
   DroppedAsset,
   World,
 } from "@utils/index.js";
@@ -74,6 +75,13 @@ export const handleReset = async (req: Request, res: Response) => {
     await Promise.allSettled(promises);
 
     await droppedAsset.fetchDataObject();
+
+    sseManager.publish({
+      event: "game_reset",
+      assetId: credentials.assetId, urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      data: { gameState: droppedAsset.dataObject },
+    });
+
     return res.json({ success: true, gameState: droppedAsset.dataObject });
   } catch (error) {
     return errorHandler({
