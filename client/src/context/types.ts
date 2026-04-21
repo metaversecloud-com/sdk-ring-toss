@@ -1,5 +1,12 @@
-import { DroppedAssetInterface } from "@rtsdk/topia";
-import { VisitorDataObjectType } from "@shared/types/VisitorData";
+export type {
+  GameState,
+  PlayerColor,
+  PegPosition,
+  GameStatus,
+  PlayerInfo,
+  BadgeType,
+  VisitorInventoryType,
+} from "@shared/types/GameTypes";
 
 export const SET_HAS_INTERACTIVE_PARAMS = "SET_HAS_INTERACTIVE_PARAMS";
 export const SET_GAME_STATE = "SET_GAME_STATE";
@@ -23,8 +30,12 @@ export interface InitialState {
   isAdmin?: boolean;
   error?: string;
   hasInteractiveParams?: boolean;
-  visitorData?: VisitorDataObjectType;
-  droppedAsset?: DroppedAssetInterface;
+  gameState?: import("@shared/types/GameTypes").GameState;
+  badges?: { [name: string]: import("@shared/types/GameTypes").BadgeType };
+  visitorInventory?: import("@shared/types/GameTypes").VisitorInventoryType;
+  profileId?: string;
+  displayName?: string;
+  visitorId?: number;
 }
 
 export type ActionType = {

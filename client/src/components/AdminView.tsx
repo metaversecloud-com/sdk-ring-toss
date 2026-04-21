@@ -4,7 +4,7 @@ import { useContext, useState } from "react";
 import { PageFooter, ConfirmationModal } from "@/components";
 
 // context
-import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
+import { GlobalDispatchContext } from "@/context/GlobalContext";
 import { ErrorType } from "@/context/types";
 
 // utils
@@ -12,8 +12,6 @@ import { backendAPI, setErrorMessage } from "@/utils";
 
 export const AdminView = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { droppedAsset } = useContext(GlobalStateContext);
-  const imgSrc = droppedAsset?.topLayerURL || droppedAsset?.bottomLayerURL;
 
   const [showConfirmationModal, setShowConfirmationModal] = useState(false);
   const [areButtonsDisabled, setAreButtonsDisabled] = useState(false);
@@ -55,7 +53,6 @@ export const AdminView = () => {
 
   return (
     <div style={{ position: "relative" }}>
-      {imgSrc && <img className="w-96 h-96 object-cover rounded-2xl my-4" alt="preview" src={imgSrc} />}
       <PageFooter>
         <button className="btn mt-2" disabled={areButtonsDisabled} onClick={handleDropAsset}>
           Drop Asset
