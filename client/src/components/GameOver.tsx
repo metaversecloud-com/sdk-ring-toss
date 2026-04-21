@@ -11,12 +11,7 @@ interface GameOverProps {
 export const GameOver = ({ gameState, profileId, onReset, isLoading }: GameOverProps) => {
   const { scores, winner, playerRed, playerBlue, isSoloGame } = gameState;
 
-  const winnerName =
-    winner === "red"
-      ? playerRed?.displayName
-      : winner === "blue"
-        ? playerBlue?.displayName
-        : null;
+  const winnerName = winner === "red" ? playerRed?.displayName : winner === "blue" ? playerBlue?.displayName : null;
 
   const isMe =
     (winner === "red" && playerRed?.profileId === profileId) ||
@@ -28,13 +23,21 @@ export const GameOver = ({ gameState, profileId, onReset, isLoading }: GameOverP
 
       <div className="flex justify-center gap-6">
         <div>
-          <p className="p2" style={{ color: "#e74c3c", fontWeight: 600 }}>Red</p>
-          <p className="h2" style={{ color: "#e74c3c" }}>{scores.red}</p>
+          <p className="p2" style={{ color: "#e74c3c", fontWeight: 600 }}>
+            Red {playerRed ? `- ${playerRed.displayName}` : ""}
+          </p>
+          <p className="h2" style={{ color: "#e74c3c" }}>
+            {scores.red}
+          </p>
         </div>
         {!isSoloGame && (
           <div>
-            <p className="p2" style={{ color: "#3498db", fontWeight: 600 }}>Blue</p>
-            <p className="h2" style={{ color: "#3498db" }}>{scores.blue}</p>
+            <p className="p2" style={{ color: "#3498db", fontWeight: 600 }}>
+              Blue {playerBlue ? `- ${playerBlue.displayName}` : ""}
+            </p>
+            <p className="h2" style={{ color: "#3498db" }}>
+              {scores.blue}
+            </p>
           </div>
         )}
       </div>
@@ -54,9 +57,7 @@ export const GameOver = ({ gameState, profileId, onReset, isLoading }: GameOverP
 
       <PageFooter>
         <button className="btn" disabled={isLoading} onClick={onReset}>
-          {playerRed?.profileId === profileId || playerBlue?.profileId === profileId
-            ? "Play Again"
-            : "Reset"}
+          {playerRed?.profileId === profileId || playerBlue?.profileId === profileId ? "Play Again" : "Reset"}
         </button>
       </PageFooter>
     </div>

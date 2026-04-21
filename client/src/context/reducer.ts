@@ -15,6 +15,7 @@ const globalReducer = (state: InitialState, action: ActionType) => {
         gameState: payload.gameState ?? state.gameState,
         badges: payload.badges ?? state.badges,
         visitorInventory: payload.visitorInventory ?? state.visitorInventory,
+        visitorGameData: payload.visitorGameData ?? state.visitorGameData,
         profileId: payload.profileId ?? state.profileId,
         displayName: payload.displayName ?? state.displayName,
         visitorId: payload.visitorId ?? state.visitorId,

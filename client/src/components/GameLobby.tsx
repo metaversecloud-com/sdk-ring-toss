@@ -10,23 +10,13 @@ interface GameLobbyProps {
   isLoading: boolean;
 }
 
-export const GameLobby = ({
-  gameState,
-  profileId,
-  onJoin,
-  onStart,
-  onReset,
-  isLoading,
-}: GameLobbyProps) => {
+export const GameLobby = ({ gameState, profileId, onJoin, onStart, onReset, isLoading }: GameLobbyProps) => {
   const { playerRed, playerBlue } = gameState;
   const isPlayer = playerRed?.profileId === profileId || playerBlue?.profileId === profileId;
   const hasOpenSlot = !playerRed || !playerBlue;
-  const hasAtLeastOnePlayer = !!playerRed || !!playerBlue;
 
   return (
     <div className="grid gap-4 text-center">
-      <h2 className="h2">Ring Toss</h2>
-
       <div className="grid gap-2">
         <div className="card">
           <div className="card-details">
@@ -56,11 +46,9 @@ export const GameLobby = ({
               {isLoading ? "Starting..." : "Start Game"}
             </button>
           )}
-          {hasAtLeastOnePlayer && (
-            <button className="btn btn-outline" disabled={isLoading} onClick={onReset}>
-              Reset
-            </button>
-          )}
+          <button className="btn btn-outline" disabled={isLoading} onClick={onReset}>
+            Reset
+          </button>
         </div>
       </PageFooter>
     </div>

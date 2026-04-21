@@ -33,6 +33,7 @@ export interface InitialState {
   gameState?: import("@shared/types/GameTypes").GameState;
   badges?: { [name: string]: import("@shared/types/GameTypes").BadgeType };
   visitorInventory?: import("@shared/types/GameTypes").VisitorInventoryType;
+  visitorGameData?: import("@shared/types/GameTypes").VisitorGameData;
   profileId?: string;
   displayName?: string;
   visitorId?: number;

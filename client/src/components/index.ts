@@ -6,6 +6,7 @@ export * from "./GameBoard";
 export * from "./GameInProgress";
 export * from "./GameLobby";
 export * from "./GameOver";
+export * from "./InstructionsModal";
 export * from "./Loading";
 export * from "./PageContainer";
 export * from "./PageFooter";

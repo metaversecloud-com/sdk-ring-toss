@@ -85,14 +85,17 @@ export const handleToss = async (req: Request, res: Response) => {
       }
     }
 
-    // Check if game is over
+    // Check if game is over — all rings used OR all pegs full (no more points possible)
     const allRingsUsed = gameState.isSoloGame
       ? updatedRingsRemaining.red <= 0
       : updatedRingsRemaining.red <= 0 && updatedRingsRemaining.blue <= 0;
 
+    const allPegsFull = Object.values(updatedPegs).every((rings) => rings.length >= MAX_RINGS_PER_PEG);
+    const gameIsOver = allRingsUsed || allPegsFull;
+
     let winner: PlayerColor | "tie" | null = null;
     let gameStatus: string = gameState.gameStatus;
-    if (allRingsUsed) {
+    if (gameIsOver) {
       gameStatus = "game-over";
       if (gameState.isSoloGame) {
         winner = "red";
@@ -166,7 +169,7 @@ export const handleToss = async (req: Request, res: Response) => {
 
     // If game just ended, process badges and visitor data
     let callerVisitorInventory;
-    if (allRingsUsed && winner) {
+    if (gameIsOver && winner) {
       const result = await processGameCompletion({
         credentials,
         gameState: { ...gameState, pegs: updatedPegs, scores: updatedScores, winner, gameStatus: "game-over" as const, consecutiveHits: updatedConsecutiveHits, totalHits: updatedTotalHits, totalMisses: updatedTotalMisses, isSoloGame: gameState.isSoloGame },

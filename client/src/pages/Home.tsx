@@ -2,7 +2,7 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { BadgesDisplay, GameBoard, GameInProgress, GameLobby, GameOver, PageContainer } from "@/components";
+import { BadgesDisplay, GameBoard, GameInProgress, GameLobby, GameOver, InstructionsModal, PageContainer } from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -17,12 +17,14 @@ const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 export const Home = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { hasInteractiveParams, gameState, profileId, badges, visitorInventory } = useContext(GlobalStateContext);
+  const { hasInteractiveParams, gameState, profileId, badges, visitorInventory, visitorGameData } = useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("game");
+  const [showInstructions, setShowInstructions] = useState(false);
+  const hasShownInstructions = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -36,6 +38,15 @@ export const Home = () => {
         .finally(() => setIsLoading(false));
     }
   }, [hasInteractiveParams]);
+
+  // Auto-open instructions for first-time players
+  useEffect(() => {
+    if (hasShownInstructions.current || !visitorGameData) return;
+    if (visitorGameData.gamesPlayed === 0) {
+      setShowInstructions(true);
+    }
+    hasShownInstructions.current = true;
+  }, [visitorGameData]);
 
   // SSE connection — replaces polling
   useEffect(() => {
@@ -193,18 +204,25 @@ export const Home = () => {
   };
 
   return (
-    <PageContainer isLoading={isLoading}>
-      <div className="tab-container mb-4">
-        <button className={activeTab === "game" ? "btn" : "btn btn-text"} onClick={() => setActiveTab("game")}>
-          Game
-        </button>
-        <button className={activeTab === "badges" ? "btn" : "btn btn-text"} onClick={() => setActiveTab("badges")}>
-          Badges
-        </button>
-      </div>
-
+    <PageContainer
+      isLoading={isLoading}
+      headerText="Ring Toss"
+      onInfoClick={() => setShowInstructions(true)}
+      tabs={
+        <div className="tab-container mb-4">
+          <button className={activeTab === "game" ? "btn" : "btn btn-text"} onClick={() => setActiveTab("game")}>
+            Game
+          </button>
+          <button className={activeTab === "badges" ? "btn" : "btn btn-text"} onClick={() => setActiveTab("badges")}>
+            Badges
+          </button>
+        </div>
+      }
+    >
       {activeTab === "game" && renderGameContent()}
       {activeTab === "badges" && <BadgesDisplay badges={badges} visitorInventory={visitorInventory} />}
+
+      {showInstructions && <InstructionsModal onClose={() => setShowInstructions(false)} />}
     </PageContainer>
   );
 };

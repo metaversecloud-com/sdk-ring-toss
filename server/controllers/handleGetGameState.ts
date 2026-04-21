@@ -7,7 +7,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
     const { urlSlug, profileId, visitorId } = credentials;
     const forceRefreshInventory = req.query.forceRefreshInventory === "true";
 
-    const [droppedAsset, badges, { visitor, isAdmin, visitorInventory }] = await Promise.all([
+    const [droppedAsset, badges, { visitor, isAdmin, visitorInventory, visitorGameData }] = await Promise.all([
       getDroppedAsset(credentials),
       getBadges(credentials, forceRefreshInventory),
       getVisitor(credentials, { shouldGetVisitorDetails: true, includeInventory: true }),
@@ -27,6 +27,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
       isAdmin,
       badges,
       visitorInventory,
+      visitorGameData,
       profileId,
       displayName: credentials.displayName,
       visitorId,
