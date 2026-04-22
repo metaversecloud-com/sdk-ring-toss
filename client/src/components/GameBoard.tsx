@@ -3,7 +3,7 @@ import { GameState, PegPosition, PlayerColor } from "@/context/types";
 import { ScoreBoard } from "@/components/ScoreBoard";
 import { PowerMeter } from "@/components/PowerMeter";
 import { PageFooter } from "@/components";
-import { MAX_RINGS_PER_PEG, PEG_POSITIONS } from "@shared/types/GameTypes";
+import { MAX_RINGS_PER_PEG, PEG_POSITIONS, RINGS_PER_PLAYER } from "@shared/types/GameTypes";
 
 interface GameBoardProps {
   gameState: GameState;
@@ -30,7 +30,7 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timedOutRef = useRef(false);
 
-  const { currentTurn, playerRed, playerBlue, pegs } = gameState;
+  const { currentTurn, playerRed, playerBlue, pegs, ringsRemaining } = gameState;
   const isMyTurn =
     (currentTurn === "red" && playerRed?.profileId === profileId) ||
     (currentTurn === "blue" && playerBlue?.profileId === profileId);
@@ -147,7 +147,15 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
         </div>
       )}
 
-      {isMyTurn && showMeter && <PowerMeter onResult={handleMeterResult} disabled={tossing} />}
+      {isMyTurn && showMeter && (
+        <PowerMeter
+          onResult={handleMeterResult}
+          disabled={tossing}
+          difficulty={gameState.difficulty}
+          tossNumber={(RINGS_PER_PLAYER - ringsRemaining.red) + (gameState.isSoloGame ? 0 : RINGS_PER_PLAYER - ringsRemaining.blue)}
+          totalTosses={gameState.isSoloGame ? RINGS_PER_PLAYER : RINGS_PER_PLAYER * 2}
+        />
+      )}
 
       {!isMyTurn && myColor && <p className="p2 text-center">Waiting for opponent's turn...</p>}
 

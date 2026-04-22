@@ -8,6 +8,7 @@ import {
   handleReset,
   handleSSE,
   handleHeartbeat,
+  handleUpdateSettings,
 } from "./controllers/index.js";
 import { getVersion } from "@utils/getVersion.js";
 
@@ -39,5 +40,6 @@ router.put("/end-game", handleEndGame);
 router.put("/reset", handleReset);
 router.get("/sse", handleSSE);
 router.post("/heartbeat", handleHeartbeat);
+router.put("/settings", handleUpdateSettings);
 
 export default router;

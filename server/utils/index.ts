@@ -1,5 +1,6 @@
 export * from "./droppedAssets/index.js";
 export * from "./awardBadge.js";
+export * from "./cleanupBoard.js";
 export * from "./cleanReturnPayload.js";
 export * from "./errorHandler.js";
 export * from "./getBadges.js";

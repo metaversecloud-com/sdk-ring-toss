@@ -1,79 +1,70 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 // components
-import { PageFooter, ConfirmationModal } from "@/components";
+import { PageFooter } from "@/components";
 
 // context
-import { GlobalDispatchContext } from "@/context/GlobalContext";
-import { ErrorType } from "@/context/types";
+import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
+import { Difficulty, ErrorType } from "@/context/types";
 
 // utils
-import { backendAPI, setErrorMessage } from "@/utils";
+import { backendAPI, setErrorMessage, setGameState } from "@/utils";
 
 export const AdminView = () => {
   const dispatch = useContext(GlobalDispatchContext);
+  const { gameState } = useContext(GlobalStateContext);
 
-  const [showConfirmationModal, setShowConfirmationModal] = useState(false);
-  const [areButtonsDisabled, setAreButtonsDisabled] = useState(false);
+  const [difficulty, setDifficulty] = useState<Difficulty>(gameState?.difficulty ?? "easy");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  const handleToggleShowConfirmationModal = () => {
-    setShowConfirmationModal(!showConfirmationModal);
-  };
+  useEffect(() => {
+    if (gameState?.difficulty) {
+      setDifficulty(gameState.difficulty);
+    }
+  }, [gameState?.difficulty]);
 
-  const handleDropAsset = async () => {
-    setAreButtonsDisabled(true);
-
+  const handleSave = async () => {
+    setIsSaving(true);
+    setSaveStatus(null);
     backendAPI
-      .post("/dropped-asset")
-      .then(() => {
-        backendAPI.put("/world/fire-toast", { title: "Asset successfully dropped!" });
+      .put("/settings", { difficulty })
+      .then((response) => {
+        setGameState(dispatch, response.data);
+        setSaveStatus({ type: "success", message: "Settings saved." });
       })
-      .catch((error) => setErrorMessage(dispatch, error as ErrorType))
-      .finally(() => {
-        setAreButtonsDisabled(false);
-      });
-  };
-
-  const handleRemoveDroppedAssets = async () => {
-    setAreButtonsDisabled(true);
-
-    backendAPI
-      .post("/remove-dropped-assets")
-      .then(() => {
-        backendAPI.put("/world/fire-toast", {
-          title: "Dropped assets successfully removed!",
-          text: "All dropped assets with matching unique name have been removed from this world.",
-        });
+      .catch((error) => {
+        setErrorMessage(dispatch, error as ErrorType);
+        setSaveStatus({ type: "error", message: "Failed to save settings." });
       })
-      .catch((error) => setErrorMessage(dispatch, error as ErrorType))
-      .finally(() => {
-        setAreButtonsDisabled(false);
-      });
+      .finally(() => setIsSaving(false));
   };
 
   return (
-    <div style={{ position: "relative" }}>
-      <PageFooter>
-        <button className="btn mt-2" disabled={areButtonsDisabled} onClick={handleDropAsset}>
-          Drop Asset
-        </button>
-        <button
-          className="btn btn-danger mt-2"
-          disabled={areButtonsDisabled}
-          onClick={() => handleToggleShowConfirmationModal()}
+    <div className="grid gap-4">
+      <div>
+        <label className="label">Difficulty</label>
+        <select
+          className="input"
+          value={difficulty}
+          onChange={(e) => setDifficulty(e.target.value as Difficulty)}
+          disabled={isSaving}
         >
-          Remove Dropped Assets
+          <option value="easy">Easy (slow power meter)</option>
+          <option value="hard">Hard (fast power meter)</option>
+          <option value="progressive">Progressive (starts easy, gets faster)</option>
+        </select>
+      </div>
+
+      {saveStatus && (
+        <p className={`p3 ${saveStatus.type === "success" ? "text-success" : "text-error"}`}>{saveStatus.message}</p>
+      )}
+
+      <PageFooter>
+        <button className="btn" disabled={isSaving} onClick={handleSave}>
+          {isSaving ? "Saving..." : "Save Settings"}
         </button>
       </PageFooter>
-
-      {showConfirmationModal && (
-        <ConfirmationModal
-          title="Remove Dropped Assets"
-          message="Are you sure you want to remove all dropped assets? This action cannot be undone."
-          handleOnConfirm={handleRemoveDroppedAssets}
-          handleToggleShowConfirmationModal={handleToggleShowConfirmationModal}
-        />
-      )}
     </div>
   );
 };

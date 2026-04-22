@@ -1,6 +1,7 @@
 export type PlayerColor = "red" | "blue";
 export type PegPosition = "left" | "center" | "right";
 export type GameStatus = "waiting" | "in-progress" | "game-over";
+export type Difficulty = "easy" | "hard" | "progressive";
 
 export const PEG_POSITIONS: PegPosition[] = ["left", "center", "right"];
 export const MAX_RINGS_PER_PEG = 3;
@@ -31,6 +32,8 @@ export interface GameState {
   consecutiveHits: { red: number; blue: number };
   totalHits: { red: number; blue: number };
   totalMisses: { red: number; blue: number };
+  wasLosing: { red: boolean; blue: boolean };
+  difficulty: Difficulty;
   isSoloGame: boolean;
   winner: PlayerColor | "tie" | null;
 }
@@ -68,6 +71,8 @@ export const DEFAULT_GAME_STATE: GameState = {
   consecutiveHits: { red: 0, blue: 0 },
   totalHits: { red: 0, blue: 0 },
   totalMisses: { red: 0, blue: 0 },
+  wasLosing: { red: false, blue: false },
+  difficulty: "easy",
   isSoloGame: false,
   winner: null,
 };

@@ -71,6 +71,13 @@ export const handleToss = async (req: Request, res: Response) => {
     const updatedScores = { ...gameState.scores };
     updatedScores[currentColor] = gameState.scores[currentColor] + scoreGain;
 
+    // Track if either player is now losing (for Comeback Kid badge)
+    const updatedWasLosing = { ...gameState.wasLosing };
+    if (!gameState.isSoloGame) {
+      if (updatedScores.red < updatedScores.blue) updatedWasLosing.red = true;
+      if (updatedScores.blue < updatedScores.red) updatedWasLosing.blue = true;
+    }
+
     const updatedRingsRemaining = { ...gameState.ringsRemaining };
     updatedRingsRemaining[currentColor] = gameState.ringsRemaining[currentColor] - 1;
 
@@ -119,6 +126,7 @@ export const handleToss = async (req: Request, res: Response) => {
         consecutiveHits: updatedConsecutiveHits,
         totalHits: updatedTotalHits,
         totalMisses: updatedTotalMisses,
+        wasLosing: updatedWasLosing,
         gameStatus,
         winner,
       },
@@ -172,7 +180,7 @@ export const handleToss = async (req: Request, res: Response) => {
     if (gameIsOver && winner) {
       const result = await processGameCompletion({
         credentials,
-        gameState: { ...gameState, pegs: updatedPegs, scores: updatedScores, winner, gameStatus: "game-over" as const, consecutiveHits: updatedConsecutiveHits, totalHits: updatedTotalHits, totalMisses: updatedTotalMisses, isSoloGame: gameState.isSoloGame },
+        gameState: { ...gameState, pegs: updatedPegs, scores: updatedScores, winner, gameStatus: "game-over" as const, consecutiveHits: updatedConsecutiveHits, totalHits: updatedTotalHits, totalMisses: updatedTotalMisses, wasLosing: updatedWasLosing, isSoloGame: gameState.isSoloGame },
         winner,
         callerProfileId: profileId,
       });

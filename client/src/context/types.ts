@@ -1,5 +1,6 @@
 export type {
   GameState,
+  Difficulty,
   PlayerColor,
   PegPosition,
   GameStatus,

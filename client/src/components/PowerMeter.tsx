@@ -1,24 +1,52 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Difficulty } from "@/context/types";
 
 interface PowerMeterProps {
   onResult: (hit: boolean) => void;
   disabled?: boolean;
+  difficulty?: Difficulty;
+  tossNumber?: number; // how many tosses have happened so far (for progressive mode)
+  totalTosses?: number; // total tosses in this game (6 for solo, 12 for 2-player)
 }
 
 const SECTIONS = 5;
-const CYCLE_MS = 280; // speed of meter sweep
+
+const SPEED_EASY = 280;
+const SPEED_HARD = 140;
+
+/**
+ * Get the cycle speed in ms based on difficulty and toss number.
+ * Progressive: linearly scales from SPEED_EASY (first toss) to SPEED_HARD (final toss).
+ */
+const getCycleMs = (difficulty: Difficulty, tossNumber: number, totalTosses: number): number => {
+  if (difficulty === "hard") return SPEED_HARD;
+  if (difficulty === "progressive") {
+    const maxSteps = Math.max(totalTosses - 1, 1);
+    const progress = Math.min(tossNumber / maxSteps, 1);
+    return Math.round(SPEED_EASY - progress * (SPEED_EASY - SPEED_HARD));
+  }
+  return SPEED_EASY;
+};
 
 /**
  * Animated power meter with 5 sections. The marker sweeps back and forth.
  * Center section (index 2) = success. Player clicks to stop.
  */
-export const PowerMeter = ({ onResult, disabled }: PowerMeterProps) => {
+export const PowerMeter = ({
+  onResult,
+  disabled,
+  difficulty = "easy",
+  tossNumber = 0,
+  totalTosses = 12,
+}: PowerMeterProps) => {
   const [position, setPosition] = useState(0);
   const [direction, setDirection] = useState(1);
   const [stopped, setStopped] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const positionRef = useRef(0);
   const stoppedRef = useRef(false);
+
+  const cycleMs = getCycleMs(difficulty, tossNumber, totalTosses);
 
   useEffect(() => {
     if (disabled || stopped) return;
@@ -36,12 +64,12 @@ export const PowerMeter = ({ onResult, disabled }: PowerMeterProps) => {
         positionRef.current = next;
         return next;
       });
-    }, CYCLE_MS);
+    }, cycleMs);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [disabled, stopped, direction]);
+  }, [disabled, stopped, direction, cycleMs]);
 
   const handleStop = useCallback(
     (manual = true) => {

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset, getGameAssets, sseManager, Visitor } from "@utils/index.js";
-import { GameState, RINGS_PER_PLAYER } from "@shared/types/GameTypes.js";
+import { errorHandler, getCredentials, getDroppedAsset, getGameAssets, cleanupBoard, sseManager, Visitor } from "@utils/index.js";
+import { DEFAULT_GAME_STATE, GameState, RINGS_PER_PLAYER } from "@shared/types/GameTypes.js";
 
 export const handleStart = async (req: Request, res: Response) => {
   try {
@@ -12,6 +12,12 @@ export const handleStart = async (req: Request, res: Response) => {
 
     if (gameState.gameStatus === "in-progress") {
       return res.status(409).json({ success: false, message: "Game already in progress." });
+    }
+
+    // Clean up remnants from a previous game (pegs, rings on canvas)
+    const hasRemnants = Object.values(gameState.pegs).some((rings) => rings.length > 0);
+    if (hasRemnants || gameState.gameStatus === "game-over") {
+      await cleanupBoard(credentials);
     }
 
     if (!gameState.playerRed) {
@@ -46,6 +52,12 @@ export const handleStart = async (req: Request, res: Response) => {
 
     await droppedAsset.updateDataObject(
       {
+        ...DEFAULT_GAME_STATE,
+        // Preserve admin settings and players
+        difficulty: gameState.difficulty,
+        playerRed: gameState.playerRed,
+        playerBlue: gameState.playerBlue,
+        // Set game-specific state
         gameStatus: "in-progress",
         isSoloGame,
         currentTurn: "red",
@@ -56,7 +68,7 @@ export const handleStart = async (req: Request, res: Response) => {
 
     // Teleport players to mats
     const { assets } = await getGameAssets(credentials);
-    const promises: Promise<any>[] = [];
+    const promises: Promise<unknown>[] = [];
 
     const redMat = assets["RingToss_mat_red"];
     if (redMat && gameState.playerRed) {

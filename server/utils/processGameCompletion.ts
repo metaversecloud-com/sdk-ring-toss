@@ -41,8 +41,8 @@ const BADGE_CONDITIONS: {
     name: "Comeback Kid",
     check: (gs, c) => {
       if (gs.isSoloGame) return false;
-      const other: PlayerColor = c === "red" ? "blue" : "red";
-      return gs.winner === c && gs.totalHits[other] > 0;
+      // Must have won AND been losing at some point during the game
+      return gs.winner === c && gs.wasLosing[c];
     },
   },
   {
