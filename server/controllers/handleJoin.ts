@@ -20,23 +20,14 @@ export const handleJoin = async (req: Request, res: Response) => {
 
     // If neither slot taken, assign to red
     if (!gameState.playerRed) {
-      await droppedAsset.updateDataObject(
-        { playerRed: playerInfo },
-        { lock: { lockId, releaseLock: true } },
-      );
+      await droppedAsset.updateDataObject({ playerRed: playerInfo }, { lock: { lockId, releaseLock: true } });
     }
     // If red is taken by someone else, assign to blue
     else if (!gameState.playerBlue && gameState.playerRed.profileId !== profileId) {
-      await droppedAsset.updateDataObject(
-        { playerBlue: playerInfo },
-        { lock: { lockId, releaseLock: true } },
-      );
+      await droppedAsset.updateDataObject({ playerBlue: playerInfo }, { lock: { lockId, releaseLock: true } });
     }
     // If player already joined as red or blue, no-op
-    else if (
-      gameState.playerRed?.profileId === profileId ||
-      gameState.playerBlue?.profileId === profileId
-    ) {
+    else if (gameState.playerRed?.profileId === profileId || gameState.playerBlue?.profileId === profileId) {
       // Already joined
     } else {
       return res.status(409).json({ success: false, message: "Both player slots are full." });
@@ -46,7 +37,10 @@ export const handleJoin = async (req: Request, res: Response) => {
 
     sseManager.publish({
       event: "player_joined",
-      assetId, urlSlug, visitorId, interactiveNonce: credentials.interactiveNonce,
+      assetId,
+      urlSlug,
+      visitorId,
+      interactiveNonce: credentials.interactiveNonce,
       data: { gameState: droppedAsset.dataObject },
     });
 

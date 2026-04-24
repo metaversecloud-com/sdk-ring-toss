@@ -14,8 +14,11 @@ const BADGE_CONDITIONS: {
   name: string;
   check: (gs: GameState, color: PlayerColor, visitorData: VisitorGameData) => boolean;
 }[] = [
+  // Sharp Shooter: Land 3 successful throws in a row
   { name: "Sharp Shooter", check: (gs, c) => gs.consecutiveHits[c] >= 3 },
+  // On Fire: Hit all your throws in a single game
   { name: "On Fire", check: (gs, c) => gs.totalHits[c] === RINGS_PER_PLAYER && gs.totalMisses[c] === 0 },
+  // Stack Master: Fill a peg entirely with your color
   {
     name: "Stack Master",
     check: (gs, c) => {
@@ -23,6 +26,7 @@ const BADGE_CONDITIONS: {
       return Object.values(gs.pegs).some((rings) => rings.length === 3 && rings.every((r: string) => r === code));
     },
   },
+  // Piggyback Pro: Stack on top of an opponent's ring
   {
     name: "Piggyback Pro",
     check: (gs, c) => {
@@ -37,6 +41,7 @@ const BADGE_CONDITIONS: {
       });
     },
   },
+  // Comeback Kid: Win after being behind in score with your final toss
   {
     name: "Comeback Kid",
     check: (gs, c) => {
@@ -45,15 +50,19 @@ const BADGE_CONDITIONS: {
       return gs.winner === c && gs.wasLosing[c];
     },
   },
+  // All Miss, No Hit: Miss every throw in a game
   {
     name: "All Miss, No Hit",
     check: (gs, c) => gs.totalHits[c] === 0 && gs.totalMisses[c] > 0,
   },
+  // Ring Toss Regular: Play 10 games
   { name: "Ring Toss Regular", check: (_gs, _c, vd) => vd.gamesPlayed >= 10 },
+  // Ring Rockstar: Win 5 games (multiplayer only)
   {
     name: "Ring Rockstar",
     check: (gs, _c, vd) => !gs.isSoloGame && vd.gamesWon >= 5,
   },
+  // Field Day Champion: Win 15 games (multiplayer only)
   {
     name: "Field Day Champion",
     check: (gs, _c, vd) => !gs.isSoloGame && vd.gamesWon >= 15,
@@ -130,7 +139,11 @@ export const processGameCompletion = async ({
     const winningPlayer = winner === "red" ? gameState.playerRed : gameState.playerBlue;
     if (winningPlayer) {
       const winnerVisitor = Visitor.create(winningPlayer.visitorId, credentials.urlSlug, {
-        credentials: { ...credentials, visitorId: winningPlayer.visitorId, interactiveNonce: winningPlayer.interactiveNonce },
+        credentials: {
+          ...credentials,
+          visitorId: winningPlayer.visitorId,
+          interactiveNonce: winningPlayer.interactiveNonce,
+        },
       });
       winnerVisitor
         .triggerParticle({ name: "crown_float", duration: 5 })

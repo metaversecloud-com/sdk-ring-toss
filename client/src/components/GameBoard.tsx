@@ -73,7 +73,8 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
     timedOutRef.current = false;
 
     const availablePegs = PEG_POSITIONS.filter((p) => pegs[p].length < MAX_RINGS_PER_PEG);
-    const randomPeg = availablePegs.length > 0 ? availablePegs[Math.floor(Math.random() * availablePegs.length)] : "center";
+    const randomPeg =
+      availablePegs.length > 0 ? availablePegs[Math.floor(Math.random() * availablePegs.length)] : "center";
 
     setTossing(true);
     setSelectedPeg(null);
@@ -113,9 +114,7 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
           <span style={{ color: turnColor, fontWeight: 600 }}>{turnLabel}</span>'s turn
           {isMyTurn && " (You!)"}
         </p>
-        {isMyTurn && !tossing && (
-          <p className={`p3 mt-1 ${timeLeft <= 5 ? "text-error" : ""}`}>{timeLeft}s</p>
-        )}
+        {isMyTurn && !tossing && <p className={`p3 mt-1 ${timeLeft <= 5 ? "text-error" : ""}`}>{timeLeft}s</p>}
       </div>
 
       {lastResult && (
@@ -152,7 +151,9 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
           onResult={handleMeterResult}
           disabled={tossing}
           difficulty={gameState.difficulty}
-          tossNumber={(RINGS_PER_PLAYER - ringsRemaining.red) + (gameState.isSoloGame ? 0 : RINGS_PER_PLAYER - ringsRemaining.blue)}
+          tossNumber={
+            RINGS_PER_PLAYER - ringsRemaining.red + (gameState.isSoloGame ? 0 : RINGS_PER_PLAYER - ringsRemaining.blue)
+          }
           totalTosses={gameState.isSoloGame ? RINGS_PER_PLAYER : RINGS_PER_PLAYER * 2}
         />
       )}

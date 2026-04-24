@@ -1,12 +1,5 @@
 import { Request, Response } from "express";
-import {
-  errorHandler,
-  getCredentials,
-  getDroppedAsset,
-  getVisitor,
-  cleanupBoard,
-  sseManager,
-} from "@utils/index.js";
+import { errorHandler, getCredentials, getDroppedAsset, getVisitor, cleanupBoard, sseManager } from "@utils/index.js";
 import { DEFAULT_GAME_STATE, GameState } from "@shared/types/GameTypes.js";
 
 export const handleReset = async (req: Request, res: Response) => {
@@ -44,7 +37,10 @@ export const handleReset = async (req: Request, res: Response) => {
 
     sseManager.publish({
       event: "game_reset",
-      assetId: credentials.assetId, urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      assetId: credentials.assetId,
+      urlSlug,
+      visitorId: credentials.visitorId,
+      interactiveNonce: credentials.interactiveNonce,
       data: { gameState: droppedAsset.dataObject },
     });
 

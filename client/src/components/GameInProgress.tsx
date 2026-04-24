@@ -15,8 +15,8 @@ export const GameInProgress = ({ gameState }: GameInProgressProps) => {
         <strong style={{ color: "#e74c3c" }}>{gameState.playerRed?.displayName}</strong>
         {gameState.playerBlue && (
           <>
-            {" "}and{" "}
-            <strong style={{ color: "#3498db" }}>{gameState.playerBlue.displayName}</strong>
+            {" "}
+            and <strong style={{ color: "#3498db" }}>{gameState.playerBlue.displayName}</strong>
           </>
         )}
         .

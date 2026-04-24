@@ -1,5 +1,13 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset, getGameAssets, sseManager, DroppedAsset, Asset } from "@utils/index.js";
+import {
+  errorHandler,
+  getCredentials,
+  getDroppedAsset,
+  getGameAssets,
+  sseManager,
+  DroppedAsset,
+  Asset,
+} from "@utils/index.js";
 import { processGameCompletion } from "@utils/processGameCompletion.js";
 import {
   GameState,
@@ -180,7 +188,18 @@ export const handleToss = async (req: Request, res: Response) => {
     if (gameIsOver && winner) {
       const result = await processGameCompletion({
         credentials,
-        gameState: { ...gameState, pegs: updatedPegs, scores: updatedScores, winner, gameStatus: "game-over" as const, consecutiveHits: updatedConsecutiveHits, totalHits: updatedTotalHits, totalMisses: updatedTotalMisses, wasLosing: updatedWasLosing, isSoloGame: gameState.isSoloGame },
+        gameState: {
+          ...gameState,
+          pegs: updatedPegs,
+          scores: updatedScores,
+          winner,
+          gameStatus: "game-over" as const,
+          consecutiveHits: updatedConsecutiveHits,
+          totalHits: updatedTotalHits,
+          totalMisses: updatedTotalMisses,
+          wasLosing: updatedWasLosing,
+          isSoloGame: gameState.isSoloGame,
+        },
         winner,
         callerProfileId: profileId,
       });
@@ -191,7 +210,10 @@ export const handleToss = async (req: Request, res: Response) => {
 
     sseManager.publish({
       event: "toss",
-      assetId, urlSlug: credentials.urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      assetId,
+      urlSlug: credentials.urlSlug,
+      visitorId: credentials.visitorId,
+      interactiveNonce: credentials.interactiveNonce,
       data: { gameState: droppedAsset.dataObject, tossResult: { landed, peg, scoreGain } },
     });
 

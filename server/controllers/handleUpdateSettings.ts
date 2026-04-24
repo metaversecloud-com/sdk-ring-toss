@@ -17,7 +17,9 @@ export const handleUpdateSettings = async (req: Request, res: Response) => {
     const { difficulty } = req.body as { difficulty: Difficulty };
 
     if (!difficulty || !VALID_DIFFICULTIES.includes(difficulty)) {
-      return res.status(400).json({ success: false, message: `Difficulty must be one of: ${VALID_DIFFICULTIES.join(", ")}` });
+      return res
+        .status(400)
+        .json({ success: false, message: `Difficulty must be one of: ${VALID_DIFFICULTIES.join(", ")}` });
     }
 
     const droppedAsset = await getDroppedAsset(credentials);
@@ -28,7 +30,10 @@ export const handleUpdateSettings = async (req: Request, res: Response) => {
 
     sseManager.publish({
       event: "settings_updated",
-      assetId, urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      assetId,
+      urlSlug,
+      visitorId: credentials.visitorId,
+      interactiveNonce: credentials.interactiveNonce,
       data: { gameState: droppedAsset.dataObject },
     });
 

@@ -1,5 +1,12 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset, getVisitor, processGameCompletion, sseManager } from "@utils/index.js";
+import {
+  errorHandler,
+  getCredentials,
+  getDroppedAsset,
+  getVisitor,
+  processGameCompletion,
+  sseManager,
+} from "@utils/index.js";
 import { GameState, PlayerColor } from "@shared/types/GameTypes.js";
 
 export const handleEndGame = async (req: Request, res: Response) => {
@@ -35,10 +42,20 @@ export const handleEndGame = async (req: Request, res: Response) => {
 
     const analytics = [];
     if (gameState.playerRed) {
-      analytics.push({ analyticName: "completions", profileId: gameState.playerRed.profileId, urlSlug, uniqueKey: gameState.playerRed.profileId });
+      analytics.push({
+        analyticName: "completions",
+        profileId: gameState.playerRed.profileId,
+        urlSlug,
+        uniqueKey: gameState.playerRed.profileId,
+      });
     }
     if (gameState.playerBlue) {
-      analytics.push({ analyticName: "completions", profileId: gameState.playerBlue.profileId, urlSlug, uniqueKey: gameState.playerBlue.profileId });
+      analytics.push({
+        analyticName: "completions",
+        profileId: gameState.playerBlue.profileId,
+        urlSlug,
+        uniqueKey: gameState.playerBlue.profileId,
+      });
     }
 
     await droppedAsset.updateDataObject(
@@ -57,7 +74,10 @@ export const handleEndGame = async (req: Request, res: Response) => {
 
     sseManager.publish({
       event: "game_ended",
-      assetId, urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      assetId,
+      urlSlug,
+      visitorId: credentials.visitorId,
+      interactiveNonce: credentials.interactiveNonce,
       data: { gameState: droppedAsset.dataObject },
     });
 
