@@ -15,10 +15,7 @@ export const handleGetGameState = async (req: Request, res: Response) => {
 
     // Track joins analytics
     await visitor
-      .updateDataObject(
-        {},
-        { analytics: [{ analyticName: "joins", profileId, urlSlug, uniqueKey: profileId }] },
-      )
+      .updateDataObject({}, { analytics: [{ analyticName: "joins", profileId, urlSlug, uniqueKey: profileId }] })
       .catch(() => console.warn("Failed to track joins analytics"));
 
     return res.json({

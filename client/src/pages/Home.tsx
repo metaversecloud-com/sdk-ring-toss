@@ -2,7 +2,15 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 
 // components
-import { BadgesDisplay, GameBoard, GameInProgress, GameLobby, GameOver, InstructionsModal, PageContainer } from "@/components";
+import {
+  BadgesDisplay,
+  GameBoard,
+  GameInProgress,
+  GameLobby,
+  GameOver,
+  InstructionsModal,
+  PageContainer,
+} from "@/components";
 
 // context
 import { GlobalDispatchContext, GlobalStateContext } from "@/context/GlobalContext";
@@ -17,7 +25,8 @@ const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 export const Home = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { hasInteractiveParams, gameState, profileId, badges, visitorInventory, visitorGameData } = useContext(GlobalStateContext);
+  const { hasInteractiveParams, gameState, profileId, badges, visitorInventory, visitorGameData } =
+    useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -55,9 +64,17 @@ export const Home = () => {
     // Build SSE URL with credentials from search params
     const params = new URLSearchParams();
     const credentialKeys = [
-      "assetId", "displayName", "identityId", "interactiveNonce",
-      "interactivePublicKey", "profileId", "sceneDropId", "uniqueName",
-      "urlSlug", "username", "visitorId",
+      "assetId",
+      "displayName",
+      "identityId",
+      "interactiveNonce",
+      "interactivePublicKey",
+      "profileId",
+      "sceneDropId",
+      "uniqueName",
+      "urlSlug",
+      "username",
+      "visitorId",
     ];
     for (const key of credentialKeys) {
       const val = searchParams.get(key);
@@ -158,8 +175,7 @@ export const Home = () => {
   const renderGameContent = () => {
     if (!gameState || !profileId) return null;
 
-    const isPlayer =
-      gameState.playerRed?.profileId === profileId || gameState.playerBlue?.profileId === profileId;
+    const isPlayer = gameState.playerRed?.profileId === profileId || gameState.playerBlue?.profileId === profileId;
 
     if (gameState.gameStatus === "waiting") {
       return (
@@ -190,14 +206,7 @@ export const Home = () => {
     }
 
     if (gameState.gameStatus === "game-over") {
-      return (
-        <GameOver
-          gameState={gameState}
-          profileId={profileId}
-          onReset={handleReset}
-          isLoading={actionLoading}
-        />
-      );
+      return <GameOver gameState={gameState} profileId={profileId} onReset={handleReset} isLoading={actionLoading} />;
     }
 
     return null;

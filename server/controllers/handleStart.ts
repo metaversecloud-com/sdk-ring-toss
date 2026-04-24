@@ -1,5 +1,13 @@
 import { Request, Response } from "express";
-import { errorHandler, getCredentials, getDroppedAsset, getGameAssets, cleanupBoard, sseManager, Visitor } from "@utils/index.js";
+import {
+  errorHandler,
+  getCredentials,
+  getDroppedAsset,
+  getGameAssets,
+  cleanupBoard,
+  sseManager,
+  Visitor,
+} from "@utils/index.js";
 import { DEFAULT_GAME_STATE, GameState, RINGS_PER_PLAYER } from "@shared/types/GameTypes.js";
 
 export const handleStart = async (req: Request, res: Response) => {
@@ -112,7 +120,10 @@ export const handleStart = async (req: Request, res: Response) => {
 
     sseManager.publish({
       event: "game_started",
-      assetId, urlSlug, visitorId: credentials.visitorId, interactiveNonce: credentials.interactiveNonce,
+      assetId,
+      urlSlug,
+      visitorId: credentials.visitorId,
+      interactiveNonce: credentials.interactiveNonce,
       data: { gameState: droppedAsset.dataObject },
     });
 
