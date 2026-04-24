@@ -11,9 +11,14 @@ const globalReducer = (state: InitialState, action: ActionType) => {
     case SET_GAME_STATE:
       return {
         ...state,
-        isAdmin: payload.isAdmin,
-        visitorData: payload.visitorData,
-        droppedAsset: payload.droppedAsset,
+        isAdmin: payload.isAdmin ?? state.isAdmin,
+        gameState: payload.gameState ?? state.gameState,
+        badges: payload.badges ?? state.badges,
+        visitorInventory: payload.visitorInventory ?? state.visitorInventory,
+        visitorGameData: payload.visitorGameData ?? state.visitorGameData,
+        profileId: payload.profileId ?? state.profileId,
+        displayName: payload.displayName ?? state.displayName,
+        visitorId: payload.visitorId ?? state.visitorId,
         error: "",
       };
     case SET_ERROR:

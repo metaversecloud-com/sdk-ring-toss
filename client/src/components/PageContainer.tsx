@@ -10,10 +10,14 @@ export const PageContainer = ({
   children,
   isLoading,
   headerText,
+  onInfoClick,
+  tabs,
 }: {
   children: ReactNode;
   isLoading: boolean;
   headerText?: string;
+  onInfoClick?: () => void;
+  tabs?: ReactNode;
 }) => {
   const { error, isAdmin } = useContext(GlobalStateContext);
   const [showSettings, setShowSettings] = useState(false);
@@ -25,9 +29,17 @@ export const PageContainer = ({
       {isAdmin && (
         <AdminIconButton setShowSettings={() => setShowSettings(!showSettings)} showSettings={showSettings} />
       )}
+      {tabs}
       {headerText && (
         <div className="pb-6">
-          <h2>{headerText}</h2>
+          <div className="flex items-center">
+            <h2 className="flex-1">{headerText}</h2>
+            {onInfoClick && (
+              <button className="btn btn-icon" onClick={onInfoClick}>
+                <img src="https://sdk-style.s3.amazonaws.com/icons/info.svg" alt="Info" />
+              </button>
+            )}
+          </div>
         </div>
       )}
       {showSettings ? <AdminView /> : children}

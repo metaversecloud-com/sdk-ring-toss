@@ -1,5 +1,15 @@
 import express from "express";
-import { handleGetGameState } from "./controllers/index.js";
+import {
+  handleGetGameState,
+  handleJoin,
+  handleStart,
+  handleToss,
+  handleEndGame,
+  handleReset,
+  handleSSE,
+  handleHeartbeat,
+  handleUpdateSettings,
+} from "./controllers/index.js";
 import { getVersion } from "@utils/getVersion.js";
 
 const router = express.Router();
@@ -18,11 +28,18 @@ router.get("/system/health", (req, res) => {
       NODE_ENV: process.env.NODE_ENV,
       INSTANCE_DOMAIN: process.env.INSTANCE_DOMAIN,
       INTERACTIVE_KEY: process.env.INTERACTIVE_KEY,
-      S3_BUCKET: process.env.S3_BUCKET,
     },
   });
 });
 
 router.get("/game-state", handleGetGameState);
+router.put("/join", handleJoin);
+router.put("/start", handleStart);
+router.put("/toss", handleToss);
+router.put("/end-game", handleEndGame);
+router.put("/reset", handleReset);
+router.get("/sse", handleSSE);
+router.post("/heartbeat", handleHeartbeat);
+router.put("/settings", handleUpdateSettings);
 
 export default router;
