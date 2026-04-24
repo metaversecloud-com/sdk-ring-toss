@@ -37,16 +37,18 @@ export const Home = () => {
   const eventSourceRef = useRef<EventSource | null>(null);
   const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const forceRefreshInventory = searchParams.get("forceRefreshInventory") === "true";
+
   // Initial game state fetch
   useEffect(() => {
     if (hasInteractiveParams) {
       backendAPI
-        .get("/game-state")
+        .get("/game-state", { params: { forceRefreshInventory } })
         .then((response) => setGameState(dispatch, response.data))
         .catch((error) => setErrorMessage(dispatch, error as ErrorType))
         .finally(() => setIsLoading(false));
     }
-  }, [hasInteractiveParams]);
+  }, [hasInteractiveParams, dispatch, forceRefreshInventory]);
 
   // Auto-open instructions for first-time players
   useEffect(() => {
