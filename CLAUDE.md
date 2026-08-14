@@ -82,7 +82,10 @@ All data object methods accept optional `analytics` array:
 ```typescript
 await visitor.setDataObject(
   { hello: "world" },
-  { analytics: [{ analyticName: "starts" }], lock: { lockId, releaseLock: true } },
+  {
+    analytics: [{ analyticName: "starts", profileId, urlSlug, uniqueKey: profileId }],
+    lock: { lockId, releaseLock: true },
+  },
 );
 
 await visitor.updateDataObject(
