@@ -21,4 +21,4 @@ images:
   - name: ringtoss0
     newName: 368076259134.dkr.ecr.us-east-1.amazonaws.com/sdk-example
     newTag: sdk-ring-toss
-    digest: sha256:1b1411c4433c0b2f7321d313fdfc939f260abeec98e156718afd3ea9902c6089
+    digest: sha256:9b02e254fa0df23fe88eb17e06f218c1afef356921327a8c62f4d9160a8d7d5a
