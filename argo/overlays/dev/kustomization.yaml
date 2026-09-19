@@ -5,7 +5,6 @@ resources:
   - ringtoss0-config.yaml
   - ringtoss0-sealedsecret.yaml
   - ringtoss0-httpscaledobject.yaml
-  - ringtoss0-interceptor-ingress.yaml
 patches:
   # Drop the direct ALB Ingress: dev is fronted through the KEDA interceptor.
   - target:
