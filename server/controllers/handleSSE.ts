@@ -5,7 +5,7 @@ import { sseManager } from "@utils/sseManager.js";
 export const handleSSE = (req: Request, res: Response) => {
   try {
     const credentials = getCredentials(req.query);
-    const { assetId, urlSlug, visitorId, interactiveNonce } = credentials;
+    const { assetId, urlSlug, visitorId, interactiveNonce, interactivePublicKey, profileId } = credentials;
 
     // Set SSE headers
     res.writeHead(200, {
@@ -15,7 +15,15 @@ export const handleSSE = (req: Request, res: Response) => {
     });
 
     // Register connection
-    sseManager.addConnection({ res, assetId, urlSlug, visitorId, interactiveNonce });
+    sseManager.addConnection({
+      res,
+      assetId,
+      urlSlug,
+      visitorId,
+      interactiveNonce,
+      interactivePublicKey,
+      profileId,
+    });
 
     // Send initial confirmation
     res.write(`retry: 5000\ndata: ${JSON.stringify({ success: true })}\n\n`);

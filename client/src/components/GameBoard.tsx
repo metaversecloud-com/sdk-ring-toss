@@ -3,7 +3,8 @@ import { GameState, PegPosition, PlayerColor } from "@/context/types";
 import { ScoreBoard } from "@/components/ScoreBoard";
 import { PowerMeter } from "@/components/PowerMeter";
 import { PageFooter } from "@/components";
-import { MAX_RINGS_PER_PEG, PEG_POSITIONS, RINGS_PER_PLAYER } from "@shared/types/GameTypes";
+import { MAX_RINGS_PER_PEG, PEG_POSITIONS, RINGS_PER_PLAYER, TURN_TIMEOUT_MS } from "@shared/types/GameTypes";
+import { backendAPI } from "@/utils";
 
 interface GameBoardProps {
   gameState: GameState;
@@ -97,6 +98,23 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
       setTossing(false);
     });
   }, [timeLeft, isMyTurn, tossing, pegs, onToss]);
+
+  // Opponent timeout — if it's NOT my turn and the opponent's turn has
+  // been running longer than TURN_TIMEOUT_MS, their client is probably
+  // gone (browser closed, refresh in flight, …). Ping the server to
+  // auto-miss on their behalf so my screen doesn't sit on "Waiting for
+  // opponent's turn..." indefinitely. The server endpoint is lockId-
+  // serialized on `turnStartedAt`, so both opponents firing at the same
+  // instant is safe. Fires at most once per turn (per-render deadline).
+  useEffect(() => {
+    if (isMyTurn || !turnStartedAt) return;
+    const elapsed = Date.now() - turnStartedAt;
+    const delay = Math.max(0, TURN_TIMEOUT_MS - elapsed);
+    const id = setTimeout(() => {
+      backendAPI.put("/turn-timeout").catch(() => {});
+    }, delay);
+    return () => clearTimeout(id);
+  }, [isMyTurn, turnStartedAt]);
 
   const handlePegSelect = (peg: PegPosition) => {
     setSelectedPeg(peg);

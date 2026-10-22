@@ -4,6 +4,7 @@ import {
   handleJoin,
   handleStart,
   handleToss,
+  handleTurnTimeout,
   handleEndGame,
   handleReset,
   handleSSE,
@@ -38,6 +39,7 @@ router.get("/game-state", handleGetGameState);
 router.put("/join", handleJoin);
 router.put("/start", handleStart);
 router.put("/toss", handleToss);
+router.put("/turn-timeout", handleTurnTimeout);
 router.put("/end-game", handleEndGame);
 router.put("/reset", handleReset);
 router.get("/sse", handleSSE);
