@@ -1,11 +1,25 @@
+import { useEffect, useState } from "react";
 import { GameState } from "@/context/types";
 import { ScoreBoard } from "@/components/ScoreBoard";
+import { STALE_GAME_MS } from "@shared/types/GameTypes";
 
 interface GameInProgressProps {
   gameState: GameState;
+  isAdmin: boolean;
+  onReset: () => void;
+  isLoading: boolean;
 }
 
-export const GameInProgress = ({ gameState }: GameInProgressProps) => {
+export const GameInProgress = ({ gameState, isAdmin, onReset, isLoading }: GameInProgressProps) => {
+  // Tick once a second so the "stale" state goes live without a page refresh.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const isStale = !!gameState.turnStartedAt && now - gameState.turnStartedAt > STALE_GAME_MS;
+
   return (
     <div className="grid gap-4 text-center">
       <h2 className="h2">Game In Progress</h2>
@@ -21,7 +35,23 @@ export const GameInProgress = ({ gameState }: GameInProgressProps) => {
         )}
         .
       </p>
-      <p className="p3">Please wait for the current game to finish.</p>
+      {isStale ? (
+        <>
+          <p className="p3">This game appears to have been abandoned.</p>
+          <button className="btn btn-danger" onClick={onReset} disabled={isLoading}>
+            Reset Game
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="p3">Please wait for the current game to finish.</p>
+          {isAdmin && (
+            <button className="btn btn-outline" onClick={onReset} disabled={isLoading}>
+              Reset Game
+            </button>
+          )}
+        </>
+      )}
     </div>
   );
 };

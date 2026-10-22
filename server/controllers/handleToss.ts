@@ -137,6 +137,11 @@ export const handleToss = async (req: Request, res: Response) => {
         wasLosing: updatedWasLosing,
         gameStatus,
         winner,
+        // Restamp the turn start so the client timer counts from this
+        // moment forward — covers both the turn-flip case (2-player) and
+        // the next-ring-same-player case (solo). On game-over we leave
+        // the stamp alone; the GameOver screen doesn't care.
+        ...(gameIsOver ? {} : { turnStartedAt: Date.now() }),
       },
       { lock: { lockId, releaseLock: true } },
     );
