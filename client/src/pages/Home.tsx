@@ -25,7 +25,7 @@ const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
 export const Home = () => {
   const dispatch = useContext(GlobalDispatchContext);
-  const { hasInteractiveParams, gameState, profileId, badges, visitorInventory, visitorGameData } =
+  const { hasInteractiveParams, gameState, profileId, badges, visitorInventory, visitorGameData, isAdmin } =
     useContext(GlobalStateContext);
   const [searchParams] = useSearchParams();
 
@@ -194,7 +194,14 @@ export const Home = () => {
 
     if (gameState.gameStatus === "in-progress") {
       if (!isPlayer) {
-        return <GameInProgress gameState={gameState} />;
+        return (
+          <GameInProgress
+            gameState={gameState}
+            isAdmin={!!isAdmin}
+            onReset={handleReset}
+            isLoading={actionLoading}
+          />
+        );
       }
       return (
         <GameBoard

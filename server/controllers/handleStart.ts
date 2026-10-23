@@ -70,6 +70,7 @@ export const handleStart = async (req: Request, res: Response) => {
         isSoloGame,
         currentTurn: "red",
         ringsRemaining: { red: RINGS_PER_PLAYER, blue: isSoloGame ? 0 : RINGS_PER_PLAYER },
+        turnStartedAt: Date.now(),
       },
       { lock: { lockId, releaseLock: true }, analytics },
     );

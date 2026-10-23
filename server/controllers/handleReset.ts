@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { errorHandler, getCredentials, getDroppedAsset, getVisitor, cleanupBoard, sseManager } from "@utils/index.js";
-import { DEFAULT_GAME_STATE, GameState } from "@shared/types/GameTypes.js";
+import { DEFAULT_GAME_STATE, GameState, STALE_GAME_MS } from "@shared/types/GameTypes.js";
 
 export const handleReset = async (req: Request, res: Response) => {
   try {
@@ -15,7 +15,12 @@ export const handleReset = async (req: Request, res: Response) => {
 
     if (gameState.gameStatus === "in-progress") {
       const isPlayer = gameState.playerRed?.profileId === profileId || gameState.playerBlue?.profileId === profileId;
-      if (!isPlayer && !isAdmin) {
+      // Anyone can reset once the game has been idle past STALE_GAME_MS —
+      // the player who abandoned it is likely gone from the world, so
+      // requiring player/admin would strand the game.
+      const isStale =
+        gameState.turnStartedAt > 0 && Date.now() - gameState.turnStartedAt > STALE_GAME_MS;
+      if (!isPlayer && !isAdmin && !isStale) {
         return res.status(403).json({
           success: false,
           message: "Only an active player or admin can reset during a game.",

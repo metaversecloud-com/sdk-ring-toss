@@ -3,7 +3,8 @@ import { GameState, PegPosition, PlayerColor } from "@/context/types";
 import { ScoreBoard } from "@/components/ScoreBoard";
 import { PowerMeter } from "@/components/PowerMeter";
 import { PageFooter } from "@/components";
-import { MAX_RINGS_PER_PEG, PEG_POSITIONS, RINGS_PER_PLAYER } from "@shared/types/GameTypes";
+import { MAX_RINGS_PER_PEG, PEG_POSITIONS, RINGS_PER_PLAYER, TURN_TIMEOUT_MS } from "@shared/types/GameTypes";
+import { backendAPI } from "@/utils";
 
 interface GameBoardProps {
   gameState: GameState;
@@ -26,11 +27,10 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
   const [showMeter, setShowMeter] = useState(false);
   const [tossing, setTossing] = useState(false);
   const [lastResult, setLastResult] = useState<{ landed: boolean; peg: PegPosition } | null>(null);
-  const [timeLeft, setTimeLeft] = useState(TURN_TIMER_SECONDS);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timedOutRef = useRef(false);
 
-  const { currentTurn, playerRed, playerBlue, pegs, ringsRemaining } = gameState;
+  const { currentTurn, playerRed, playerBlue, pegs, ringsRemaining, turnStartedAt } = gameState;
   const isMyTurn =
     (currentTurn === "red" && playerRed?.profileId === profileId) ||
     (currentTurn === "blue" && playerBlue?.profileId === profileId);
@@ -41,31 +41,45 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
   const turnLabel = currentTurn === "red" ? playerRed?.displayName : playerBlue?.displayName;
   const turnColor = currentTurn === "red" ? "#e74c3c" : "#3498db";
 
-  // Reset turn timer whenever it becomes my turn
+  // Derive the remaining turn time from the server-stamped `turnStartedAt`.
+  // Storing this on GameState means re-opening the drawer (e.g. clicking
+  // the key asset mid-turn) remounts the component to the SAME computed
+  // time instead of resetting to 20s.
+  const computeTimeLeft = useCallback(() => {
+    if (!turnStartedAt) return TURN_TIMER_SECONDS;
+    const elapsed = Math.floor((Date.now() - turnStartedAt) / 1000);
+    return Math.max(0, TURN_TIMER_SECONDS - elapsed);
+  }, [turnStartedAt]);
+
+  const [timeLeft, setTimeLeft] = useState(computeTimeLeft);
+
   useEffect(() => {
     if (!isMyTurn || tossing) {
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
 
-    timedOutRef.current = false;
-    setTimeLeft(TURN_TIMER_SECONDS);
+    // Re-seed from server-stamped `turnStartedAt` on every turn change OR
+    // remount. If the server's timer has already elapsed, mark timed-out
+    // immediately so the handler below fires an auto-miss.
+    const seeded = computeTimeLeft();
+    timedOutRef.current = seeded <= 0;
+    setTimeLeft(seeded);
+    if (seeded <= 0) return;
 
     timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current);
-          timedOutRef.current = true;
-          return 0;
-        }
-        return prev - 1;
-      });
+      const next = computeTimeLeft();
+      setTimeLeft(next);
+      if (next <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        timedOutRef.current = true;
+      }
     }, 1000);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isMyTurn, tossing, currentTurn]);
+  }, [isMyTurn, tossing, currentTurn, turnStartedAt, computeTimeLeft]);
 
   // Handle timeout — auto-miss on a random non-full peg
   useEffect(() => {
@@ -84,6 +98,23 @@ export const GameBoard = ({ gameState, profileId, onToss, onEndGame, isLoading }
       setTossing(false);
     });
   }, [timeLeft, isMyTurn, tossing, pegs, onToss]);
+
+  // Opponent timeout — if it's NOT my turn and the opponent's turn has
+  // been running longer than TURN_TIMEOUT_MS, their client is probably
+  // gone (browser closed, refresh in flight, …). Ping the server to
+  // auto-miss on their behalf so my screen doesn't sit on "Waiting for
+  // opponent's turn..." indefinitely. The server endpoint is lockId-
+  // serialized on `turnStartedAt`, so both opponents firing at the same
+  // instant is safe. Fires at most once per turn (per-render deadline).
+  useEffect(() => {
+    if (isMyTurn || !turnStartedAt) return;
+    const elapsed = Date.now() - turnStartedAt;
+    const delay = Math.max(0, TURN_TIMEOUT_MS - elapsed);
+    const id = setTimeout(() => {
+      backendAPI.put("/turn-timeout").catch(() => {});
+    }, delay);
+    return () => clearTimeout(id);
+  }, [isMyTurn, turnStartedAt]);
 
   const handlePegSelect = (peg: PegPosition) => {
     setSelectedPeg(peg);

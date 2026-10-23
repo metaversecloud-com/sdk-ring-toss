@@ -6,6 +6,10 @@ interface SSEConnection {
   urlSlug: string;
   visitorId: number;
   interactiveNonce: string;
+  /** Needed so the background turn-timeout sweeper can rebuild credentials for SDK calls on this asset. */
+  interactivePublicKey: string;
+  /** Needed so the sweeper can rebuild credentials for SDK calls. */
+  profileId: string;
   lastHeartbeatTime: number;
 }
 
@@ -104,6 +108,21 @@ class SSEManager {
 
   get connectionCount() {
     return this.connections.length;
+  }
+
+  /**
+   * Returns one connection per unique `(urlSlug, assetId)` so a background
+   * sweeper can act on every active game without duplicating work. The
+   * chosen representative connection carries enough credentials to rebuild
+   * `Credentials` for SDK calls.
+   */
+  uniqueAssetConnections(): SSEConnection[] {
+    const seen = new Map<string, SSEConnection>();
+    for (const conn of this.connections) {
+      const key = `${conn.urlSlug}:${conn.assetId}`;
+      if (!seen.has(key)) seen.set(key, conn);
+    }
+    return [...seen.values()];
   }
 }
 

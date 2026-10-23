@@ -36,7 +36,26 @@ export interface GameState {
   difficulty: Difficulty;
   isSoloGame: boolean;
   winner: PlayerColor | "tie" | null;
+  /**
+   * When the current turn started, as `Date.now()`. Set at game start +
+   * every turn flip in `handleToss`. Drives the client's turn-timer
+   * countdown (so remounts don't reset to 20s) and the auto-reset for
+   * abandoned games.
+   */
+  turnStartedAt: number;
 }
+
+/** Milliseconds after `turnStartedAt` past which a game is considered abandoned. */
+export const STALE_GAME_MS = 1 * 60 * 1000;
+
+/**
+ * Milliseconds after `turnStartedAt` past which the current player is
+ * considered to have timed out and the server auto-processes a miss on
+ * their behalf. 20s turn timer + 5s grace. Fires from `handleGetGameState`
+ * on any poll from any user, so even if the current player closed their
+ * browser, the OTHER player's next game-state fetch advances the turn.
+ */
+export const TURN_TIMEOUT_MS = 25 * 1000;
 
 export interface VisitorGameData {
   gamesPlayed: number;
@@ -75,6 +94,7 @@ export const DEFAULT_GAME_STATE: GameState = {
   difficulty: "easy",
   isSoloGame: false,
   winner: null,
+  turnStartedAt: 0,
 };
 
 /**

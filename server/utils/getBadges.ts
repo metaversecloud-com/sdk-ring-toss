@@ -7,8 +7,9 @@ export type BadgeRecord = { [name: string]: BadgeType };
 export const getBadges = async (credentials: Credentials, forceRefresh = false): Promise<BadgeRecord> => {
   const inventoryItems = await getCachedInventoryItems({ credentials, forceRefresh });
 
+  // INACTIVE items are filtered at the cache layer.
   const badgeItems = inventoryItems
-    .filter((item) => item.name && item.type === "BADGE" && item.status === "ACTIVE")
+    .filter((item) => item.name && item.type === "BADGE")
     .sort((a, b) => ((a.metadata as any)?.sortOrder ?? Infinity) - ((b.metadata as any)?.sortOrder ?? Infinity));
 
   const badges: BadgeRecord = {};

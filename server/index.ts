@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import router from "./routes.js";
 import path from "path";
 import { cleanReturnPayload } from "@utils/cleanReturnPayload.js";
+import { startTurnTimeoutSweeper } from "@utils/turnTimeoutSweeper.js";
 import { fileURLToPath } from "url";
 
 dotenv.config({ path: "../.env" });
@@ -82,4 +83,9 @@ process.on("uncaughtException", (error) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port: ${PORT}`);
+  // Background sweep that auto-misses any in-progress game whose current
+  // turn has blown through TURN_TIMEOUT_MS, regardless of whether a
+  // client is still polling. Guarantees the game clock keeps ticking
+  // after the current player closes their browser.
+  startTurnTimeoutSweeper();
 });
