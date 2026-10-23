@@ -18,7 +18,7 @@ This app is the **canonical reference implementation for real-time updates via S
 - **3 pegs (`left`, `center`, `right`)**, each holding up to `MAX_RINGS_PER_PEG = 3` rings.
 - **6 rings per player** (`RINGS_PER_PLAYER = 6`). Turns alternate in 2P; solo just repeats.
 - **Power-meter toss** — 5-section sweeping marker, section index `2` (center) is the only "Hit!" band. `hit` is set client-side by `PowerMeter.tsx` and sent to `PUT /api/toss`.
-- **20-second turn timer.** On expiry the client auto-submits a miss (`hit: false`) against a random non-full peg (`center` if all full).
+- **20-second turn timer, with a 25-second server-enforced hard cap.** The client clock derives from `turnStartedAt` (not component state) so remounting the drawer by re-clicking the key asset doesn't reset the countdown. If the current player is still inactive past `TURN_TIMEOUT_MS` (`20s + 5s` grace), the server auto-submits a miss on their behalf — see **Server-side turn timeout** below for why that path exists in three places.
 - **Difficulty** (admin-set, persists across resets): `easy` (280 ms/step), `hard` (140 ms/step), `progressive` (linear ramp `easy → hard` across the game).
 - **Scoring.** Landed ring = `+2`. In 2P, if the ring on top of the peg (before this toss) matches your color, additional `+1` **stacking bonus**. Missed rings score `0`.
 - **Game end.** All rings used **or** all three pegs full. Winner = higher score; equal scores in 2P = `"tie"`; solo always wins as `"red"`. Winner receives a `crown_float` particle via `Visitor.triggerParticle`.
@@ -32,10 +32,23 @@ This app is the **canonical reference implementation for real-time updates via S
 
 ### Real-Time (SSE)
 
-- Client opens `EventSource("/api/sse?<credentials>")` from `client/src/pages/Home.tsx`; the server registers the connection in `sseManager` keyed by `{ visitorId, assetId, urlSlug, interactiveNonce }`.
+- Client opens `EventSource("/api/sse?<credentials>")` from `client/src/pages/Home.tsx`; the server registers the connection in `sseManager` keyed by `{ visitorId, assetId, urlSlug, interactiveNonce }`, plus the sender's `interactivePublicKey` + `profileId` (so the turn-timeout sweeper can borrow those to build credentials for background SDK calls).
 - Each mutating controller publishes to `sseManager` after `fetchDataObject()`; the manager fans out to all other connections for the **same `assetId` + `urlSlug`**, and **skips the sender** (same `visitorId` + `interactiveNonce`).
+- Server-side writes (stale-game auto-reset, turn-timeout auto-miss) publish with **sentinel** `visitorId`/`interactiveNonce` so the sender-skip filter doesn't accidentally silence the real user whose credentials were borrowed for the SDK call. Without the sentinel the triggering user's own browser wouldn't receive the fresh state.
 - Client heartbeats `POST /api/heartbeat` every 5 minutes; server prunes any connection whose last heartbeat is older than 10 minutes (checked every 60 seconds).
 - On any `game-over` event, the client re-fetches full `/game-state` to refresh badges + inventory.
+
+### Server-side turn timeout + stale-game auto-reset
+
+Both exist to handle the "player closes their browser mid-turn" case, where no human is around to call `/toss` or `/reset`.
+
+- **`turnStartedAt`** is stamped on `/start` and every turn flip. The client watches it to compute `timeLeft` (remount-safe); the server watches it to detect inactivity.
+- **Three overlapping fallbacks for turn-timeout** — belt-and-suspenders because any single path can fail silently if a specific user leaves:
+  1. **Opponent-watcher** (`PUT /turn-timeout`) — when it's not your turn, the client sets a one-shot `setTimeout` for `TURN_TIMEOUT_MS` and pings this endpoint if the opposing turn blows through it.
+  2. **`handleGetGameState` sweep** — any `GET /game-state` runs `applyTurnTimeout` before responding, so the first drawer open after a stall self-heals.
+  3. **`turnTimeoutSweeper`** — a server-side `setInterval(5s)` walks every unique `(urlSlug, assetId)` currently in `sseManager`, fetches state via credentials borrowed from a representative connection, and applies the auto-miss. This is what keeps the clock moving when **both** browsers are closed.
+- **Stale-game auto-reset** (`STALE_GAME_MS = 60s`) kicks in on `handleGetGameState` for games stuck `in-progress` with no turn activity past that window. The reset fires a `game_reset` SSE event with sentinel sender ids. Once a game crosses `STALE_GAME_MS`, every connected drawer surfaces a danger-styled **Reset Game** button with abandoned-game copy — a 1s local tick means the flip happens without a page refresh. Admins also get a Reset Game button on in-progress games they're not seated at.
+- Locking on `turnStartedAt` (short bucketed lockId) serializes the three paths so a double auto-miss can't apply.
 
 ### Badges (9 total)
 
@@ -107,6 +120,7 @@ The full game state. Shape from `shared/types/GameTypes.ts` (`DEFAULT_GAME_STATE
   difficulty: "easy" | "hard" | "progressive";  // Preserved across /reset
   isSoloGame: boolean;
   winner: "red" | "blue" | "tie" | null;
+  turnStartedAt: number;  // Stamped on /start + every turn flip. Drives the client countdown + server-side stale/timeout sweeps.
 }
 ```
 
@@ -137,8 +151,9 @@ All routes mount under `/api`.
 | `PUT`  | `/join`          | Assign the caller to `playerRed` (or `playerBlue` if Red is taken by another `profileId`). No-op if already joined. 409 if both slots full or a game is in progress. Publishes `player_joined`. |
 | `PUT`  | `/start`         | Cleans up remnants, resets state (preserving `difficulty` and players), sets `gameStatus: "in-progress"`, teleports players to mats. Fires `starts1player` / `starts2player`. Publishes `game_started`. |
 | `PUT`  | `/toss`          | Body: `{ peg: "left" \| "center" \| "right", hit: boolean }`. Updates pegs, scores, turn, ring counts, drops ring asset on miss, updates peg image on hit; ends game + awards badges if terminal. Publishes `toss`. |
+| `PUT`  | `/turn-timeout`  | Opponent-watcher ping: client calls this when it detects the current player has blown past `TURN_TIMEOUT_MS` with no toss. Runs `applyTurnTimeout` to charge an auto-miss. Idempotent; no-op if the turn already advanced. Publishes `toss`. |
 | `PUT`  | `/end-game`      | Player or admin ends the round early. Computes winner from current scores, fires `completions` for each player, runs `processGameCompletion`. Publishes `game_ended`.                          |
-| `PUT`  | `/reset`         | Player-or-admin during `in-progress`, anyone otherwise. Full board reset (preserves `difficulty`) + `cleanupBoard()`. Fires `resets`. Publishes `game_reset`.                                   |
+| `PUT`  | `/reset`         | During `in-progress`: player, admin, **or anyone if the game is past `STALE_GAME_MS`**. During `waiting`/`game-over`: anyone. Full board reset (preserves `difficulty`) + `cleanupBoard()`. Fires `resets`. Publishes `game_reset`.                                   |
 | `PUT`  | `/settings`      | Admin-only. Body: `{ difficulty }`. Publishes `settings_updated`.                                                                                                                              |
 | `GET`  | `/sse`           | Opens a Server-Sent Events stream. Registers the connection in `sseManager` for fan-out. **Canonical SSE reference — see `server/utils/sseManager.ts`.**                                        |
 | `POST` | `/heartbeat`     | Client pings every 5 minutes to refresh `lastHeartbeatTime`. Stale connections (>10 min idle) are pruned every 60 s.                                                                            |
@@ -214,7 +229,7 @@ Then place `RingToss_keyAsset`, `RingToss_mat_red`, `RingToss_mat_blue`, and the
   - **Reconnect-safe** — `addConnection` first evicts any existing connection matching the same `{ visitorId, assetId, urlSlug }` triple before pushing the new one, so a page refresh doesn't leak sockets.
   - **Heartbeat + prune** — client posts `/api/heartbeat` on a 5-minute cadence; server prunes anything idle >10 minutes every 60 seconds.
   - **Wire format** — `retry: 5000\ndata: {"kind": "<event>", "data": {...}}\n\n`; the client subscribes with default `onmessage` and reads `parsed.data.gameState`.
-- **Turn timer is client-only.** Server does not enforce the 20-second window; the client submits an auto-miss on timeout via the same `/api/toss` route.
+- **Turn timer is both client- and server-enforced.** The client shows a 20-second countdown; the server treats anything past `TURN_TIMEOUT_MS` (25s) as an auto-miss. Three fallback paths cover the "player closed their browser" case — see **Server-side turn timeout** above.
 - **`isSoloGame` is decided at `/start`, not `/join`.** A single-player game happens when `playerBlue` is still `null` when Red hits Start. Blue joining after Start is not possible — Blue can only join in the `waiting` state.
 - **Locks bucket to 5 seconds** (`Math.round(Date.now() / 5000) * 5000`) to serialize rapid same-op calls; per-asset scope via `assetId`.
 - **Badge inventory is cached 24h** in `server/utils/inventoryCache.ts`. Pass `?forceRefreshInventory=true` on `/game-state` to skip the cache.
@@ -228,6 +243,8 @@ Then place `RingToss_keyAsset`, `RingToss_mat_red`, `RingToss_mat_blue`, and the
 | SSE + heartbeat routes | [`server/controllers/handleSSE.ts`](server/controllers/handleSSE.ts)                                                       |
 | Game state shape       | [`shared/types/GameTypes.ts`](shared/types/GameTypes.ts)                                                                   |
 | Toss logic + scoring   | [`server/controllers/handleToss.ts`](server/controllers/handleToss.ts)                                                     |
+| Turn-timeout auto-miss | [`server/utils/applyTurnTimeout.ts`](server/utils/applyTurnTimeout.ts), [`server/controllers/handleTurnTimeout.ts`](server/controllers/handleTurnTimeout.ts) |
+| Background sweeper     | [`server/utils/turnTimeoutSweeper.ts`](server/utils/turnTimeoutSweeper.ts)                                                 |
 | Badge grants           | [`server/utils/processGameCompletion.ts`](server/utils/processGameCompletion.ts), [`server/utils/awardBadge.ts`](server/utils/awardBadge.ts) |
 | Canvas cleanup         | [`server/utils/cleanupBoard.ts`](server/utils/cleanupBoard.ts)                                                             |
 | Power meter (UI)       | [`client/src/components/PowerMeter.tsx`](client/src/components/PowerMeter.tsx)                                             |
