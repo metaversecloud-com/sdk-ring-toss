@@ -1,6 +1,6 @@
 // Throwing rings: scoring, stacking bonus, misses, full pegs, turn order and the canvas updates.
 import { ALICE, BOB, CAROL, PEG_POSITIONS, S3_BASE, expect, gameData, test } from "../../fixtures";
-import { openAs, returningPlayer } from "./helpers";
+import { meterRunning, openAs, pauseClock, returningPlayer } from "./helpers";
 
 test("a hit lands the ring on the peg, scores 2, updates the peg image and passes the turn", async ({ world }) => {
   const before = Date.now() - 5_000;
@@ -118,10 +118,13 @@ test("stopping the power meter on the centre section lands the ring", async ({ p
   // The meter moves one section per 280 ms on easy; a controlled clock stops it exactly on "Hit!".
   await page.clock.install();
   await openAs(page, world, ALICE, { firstTime: false });
+  await pauseClock(page);
 
   await page.getByRole("button", { name: /^Center \(0\/3\)$/ }).click();
+  await meterRunning(page);
   await page.clock.runFor(2 * 280);
   await page.getByRole("button", { name: "Stop!" }).click();
+  await page.clock.resume();
 
   await expect(page.getByText("Ring landed on Center!")).toBeVisible();
   await expect(page.getByText("5 rings left")).toBeVisible();
@@ -135,10 +138,13 @@ test("stopping the power meter anywhere else misses", async ({ page, world }) =>
   });
   await page.clock.install();
   await openAs(page, world, ALICE, { firstTime: false });
+  await pauseClock(page);
 
   await page.getByRole("button", { name: /^Left/ }).click();
+  await meterRunning(page);
   await page.clock.runFor(280);
   await page.getByRole("button", { name: "Stop!" }).click();
+  await page.clock.resume();
 
   await expect(page.getByText("Miss!")).toBeVisible();
   expect(await world.game()).toMatchObject({ pegs: { left: [] }, totalMisses: { red: 1 }, ringsRemaining: { red: 5 } });

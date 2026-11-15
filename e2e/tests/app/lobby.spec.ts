@@ -13,7 +13,7 @@ test("a fresh board shows two open slots and the How to Play guide for a first-t
   // Initialises the asset's game state and the visitor's stats on first open.
   expect(await world.game()).toMatchObject({ gameStatus: "waiting", playerRed: null, playerBlue: null, difficulty: "easy" });
   expect(await world.stats(ALICE)).toEqual({ gamesPlayed: 0, gamesWon: 0 });
-  expect(await world.analytics()).toContain(`joins:${ALICE.profileId}`);
+  expect(await world.analytics()).toContain(`joins:${world.profileOf(ALICE)}`);
 });
 
 test("joining from the drawer takes the red slot and offers Start Game", async ({ page, world }) => {
@@ -26,7 +26,7 @@ test("joining from the drawer takes the red slot and offers Start Game", async (
   await expect(page.getByRole("button", { name: "Start Game" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Join Game" })).toHaveCount(0);
   expect((await world.game()).playerRed).toEqual({
-    profileId: ALICE.profileId,
+    profileId: world.profileOf(ALICE),
     visitorId: ALICE.visitorId,
     displayName: "Alice",
     interactiveNonce: expect.any(String),
@@ -44,8 +44,8 @@ test("the second player gets blue, a third is turned away, and joining twice is 
   expect(third.status()).toBe(409);
   expect((await third.json()).message).toBe("Both player slots are full.");
   const game = await world.game();
-  expect(game.playerRed.profileId).toBe(ALICE.profileId);
-  expect(game.playerBlue.profileId).toBe(BOB.profileId);
+  expect(game.playerRed.profileId).toBe(world.profileOf(ALICE));
+  expect(game.playerBlue.profileId).toBe(world.profileOf(BOB));
 });
 
 test("nobody can join while a game is in progress", async ({ world }) => {
@@ -68,7 +68,7 @@ test("two people joining at the same moment end up in different slots", async ({
 
   expect(alice.ok() && bob.ok()).toBe(true);
   const game = await world.game();
-  expect([game.playerRed?.profileId, game.playerBlue?.profileId].sort()).toEqual([ALICE.profileId, BOB.profileId]);
+  expect([game.playerRed?.profileId, game.playerBlue?.profileId].sort()).toEqual([world.profileOf(ALICE), world.profileOf(BOB)]);
 });
 
 test("starting a solo game from the drawer shows the throw controls and teleports the player to the red mat", async ({
@@ -98,7 +98,7 @@ test("starting a solo game from the drawer shows the throw controls and teleport
       teleport: true,
     }),
   ]);
-  expect(await world.analytics()).toContain(`starts1player:${ALICE.profileId}`);
+  expect(await world.analytics()).toContain(`starts1player:${world.profileOf(ALICE)}`);
 });
 
 test("starting a 2-player game teleports both players to their mats", async ({ world }) => {
@@ -114,7 +114,7 @@ test("starting a 2-player game teleports both players to their mats", async ({ w
     expect.objectContaining({ visitorId: String(BOB.visitorId), moveTo: { x: MAT_POSITIONS.RingToss_mat_blue.x, y: 650 } }),
   );
   expect(await world.analytics()).toEqual(
-    expect.arrayContaining([`starts2player:${ALICE.profileId}`, `starts2player:${BOB.profileId}`]),
+    expect.arrayContaining([`starts2player:${world.profileOf(ALICE)}`, `starts2player:${world.profileOf(BOB)}`]),
   );
 });
 

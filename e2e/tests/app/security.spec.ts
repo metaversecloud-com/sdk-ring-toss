@@ -7,7 +7,7 @@ test("a bystander can't throw for a player by sending the player's profileId", a
 
   // Carol's own session (visitorId 3 + her nonce), with Alice's profileId: it's in every /game-state response.
   const response = await request.put(
-    world.api("/toss", { ...world.as(CAROL), profileId: ALICE.profileId }),
+    world.api("/toss", { ...world.as(CAROL), profileId: world.profileOf(ALICE) }),
     { data: { peg: "left", hit: true } },
   );
 
