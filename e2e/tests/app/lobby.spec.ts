@@ -62,7 +62,7 @@ test("two people joining at the same moment end up in different slots", async ({
   test.fail(true, "EXP-454: concurrent joins both take red; the first player is silently replaced");
   // Both requests read the empty board before either writes. The join lock is released after each
   // write, so it doesn't serialize them.
-  await world.seed({ latencyMs: 150 });
+  await world.seed({ assetData: gameData(world.urlSlug, { status: "waiting", red: null, blue: null }), delays: { "/assets/key-asset/update-data-object": 600 } });
 
   const [alice, bob] = await Promise.all([world.call(ALICE, "put", "/join"), world.call(BOB, "put", "/join")]);
 
