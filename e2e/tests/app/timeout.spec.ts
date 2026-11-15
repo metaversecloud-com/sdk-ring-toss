@@ -51,14 +51,19 @@ test("a timed-out last ring ends the game", async ({ world }) => {
 
 test("two timeout pings at once count the timed-out game only once", async ({ world }) => {
   test.fail(true, "EXP-454: the timeout lock is released after the write, so overlapping pings both finish the game");
-  // Both requests read the game before either writes; the opponent's ping and a drawer poll racing.
+  // The opponent's ping and a drawer poll racing: holding back the game-state writes makes both read
+  // the game before either writes.
   await world.seed({
     assetData: gameData(world.urlSlug, { turnStartedAt: TIMED_OUT(), turn: "blue", ringsRemaining: { red: 0, blue: 1 }, scores: { red: 2, blue: 0 } }),
-    latencyMs: 100,
+    delays: { "/assets/key-asset/update-data-object": 600 },
   });
 
-  await Promise.all([world.call(ALICE, "put", "/turn-timeout"), world.call(CAROL, "get", "/game-state")]);
+  await Promise.all([world.call(ALICE, "put", "/turn-timeout"), world.call(CAROL, "put", "/turn-timeout")]);
 
+  // Only one of them may finish the game: one crown for the winner.
+  // The crown is fire-and-forget, so give both a moment to land.
+  await new Promise((resolve) => setTimeout(resolve, 500));
+  expect(await world.events("particles")).toHaveLength(1);
   expect(await world.stats(ALICE)).toEqual({ gamesPlayed: 1, gamesWon: 1 });
 });
 
