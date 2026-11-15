@@ -59,7 +59,7 @@ test.describe("the last ring", () => {
     await world.call(BOB, "put", "/toss", { peg: "left", hit: true });
 
     expect(await world.analytics()).toEqual(
-      expect.arrayContaining([`completions:${ALICE.profileId}`, `completions:${BOB.profileId}`]),
+      expect.arrayContaining([`completions:${world.profileOf(ALICE)}`, `completions:${world.profileOf(BOB)}`]),
     );
   });
 });
@@ -226,7 +226,7 @@ test.describe("End Game", () => {
     expect(await world.game()).toMatchObject({ gameStatus: "game-over", winner: "blue" });
     expect(await world.stats(BOB)).toEqual({ gamesPlayed: 1, gamesWon: 1 });
     expect(await world.analytics()).toEqual(
-      expect.arrayContaining([`completions:${ALICE.profileId}`, `completions:${BOB.profileId}`]),
+      expect.arrayContaining([`completions:${world.profileOf(ALICE)}`, `completions:${world.profileOf(BOB)}`]),
     );
   });
 
