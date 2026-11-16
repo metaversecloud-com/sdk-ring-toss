@@ -64,7 +64,6 @@ test("the live stream only goes to drawers of the same game", async ({ world }) 
 });
 
 test("the live stream refuses a request without session credentials", async ({ world }) => {
-  test.fail(true, "EXP-454: /api/sse opens a 200 stream even when getCredentials fails");
   await world.seed();
   const stream = await openStream("");
   await stream.close();
@@ -73,7 +72,6 @@ test("the live stream refuses a request without session credentials", async ({ w
 });
 
 test("the live stream refuses credentials signed for another app's public key", async ({ world }) => {
-  test.fail(true, "EXP-454: /api/sse opens a 200 stream even when getCredentials fails");
   await world.seed();
   const stream = await openStream(world.credentials({ interactivePublicKey: "someone-else" }).toString());
   await stream.close();

@@ -1,4 +1,4 @@
-const keys = ["topia", "credentials", "jwt", "requestOptions"];
+const keys = ["topia", "credentials", "jwt", "requestOptions", "interactiveSecret"];
 
 export const cleanReturnPayload = (payload: any) => {
   const keyExists = (payload: any) => {

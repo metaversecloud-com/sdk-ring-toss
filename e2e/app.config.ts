@@ -64,10 +64,6 @@ export type RouteSpec = {
   knownBugs?: KnownBugs;
 };
 
-// getCredentials (protected file) returns { error } instead of throwing, so every route that
-// uses it has this bug until it's fixed there.
-const GET_CREDENTIALS_DOESNT_THROW = "EXP-428 #6: getCredentials doesn't throw";
-
 /**
  * API routes that read the session credentials (getCredentials). Each one must reject missing or
  * foreign credentials and must never send the interactive secret to the browser. List them all.
@@ -76,27 +72,16 @@ const GET_CREDENTIALS_DOESNT_THROW = "EXP-428 #6: getCredentials doesn't throw";
  * the platform tests can't read its body and time out. Cover an SSE route's credential checks in
  * tests/app instead (open it with page.request or fetch + AbortController and check the status).
  */
-const BUG = { unnamedCredentialError: GET_CREDENTIALS_DOESNT_THROW };
-
 export const CREDENTIALED_ROUTES: RouteSpec[] = [
-  { method: "get", path: "/game-state", knownBugs: BUG },
-  { method: "put", path: "/join", knownBugs: BUG },
-  { method: "put", path: "/start", knownBugs: BUG },
-  { method: "put", path: "/toss", data: { peg: "center", hit: true }, knownBugs: BUG },
-  { method: "put", path: "/turn-timeout", knownBugs: BUG },
-  { method: "put", path: "/end-game", knownBugs: BUG },
-  { method: "put", path: "/reset", knownBugs: BUG },
-  { method: "put", path: "/settings", data: { difficulty: "hard" }, knownBugs: BUG },
-  {
-    method: "post",
-    path: "/heartbeat",
-    knownBugs: {
-      ...BUG,
-      // Never calls Topia, so the ignored getCredentials error goes unnoticed (same as GET /sse).
-      acceptsMissingCredentials: "EXP-454: /heartbeat succeeds when getCredentials fails",
-      acceptsForeignCredentials: "EXP-454: /heartbeat succeeds when getCredentials fails",
-    },
-  },
+  { method: "get", path: "/game-state" },
+  { method: "put", path: "/join" },
+  { method: "put", path: "/start" },
+  { method: "put", path: "/toss", data: { peg: "center", hit: true } },
+  { method: "put", path: "/turn-timeout" },
+  { method: "put", path: "/end-game" },
+  { method: "put", path: "/reset" },
+  { method: "put", path: "/settings", data: { difficulty: "hard" } },
+  { method: "post", path: "/heartbeat" },
 ];
 
 /**
@@ -153,10 +138,7 @@ export const HEALTH_KNOWN_BUGS: { incompleteContract?: string } = {};
  * registers its own logging handler. Fix: process.removeAllListeners("unhandledRejection") before
  * registering the app's handler.
  */
-export const PROCESS_KNOWN_BUGS: { exitsOnUnhandledRejection?: string } = {
-  exitsOnUnhandledRejection:
-    "EXP-472: @rtsdk/topia's unhandledRejection hook calls process.exit(1); server/index.ts's handler doesn't stop it",
-};
+export const PROCESS_KNOWN_BUGS: { exitsOnUnhandledRejection?: string } = {};
 
 /**
  * The request system.spec sends a malformed JSON body to. Default: the first POST/PUT route in
@@ -172,9 +154,7 @@ export const MALFORMED_JSON_REQUEST: { method: "post" | "put"; path: string } | 
  * middleware after express.json()). Fix: an error middleware that answers body-parser errors
  * (err.type === "entity.parse.failed") with res.status(400).json({ success: false, error: "Invalid JSON" }).
  */
-export const ERROR_KNOWN_BUGS: { malformedJson?: string } = {
-  malformedJson: "EXP-473: no error middleware: Express' default error page shows the stack trace (NODE_ENV isn't production)",
-};
+export const ERROR_KNOWN_BUGS: { malformedJson?: string } = {};
 
 /**
  * true starts mock-redis/server.mjs (an in-memory Redis) next to mock-topia and points REDIS_URL at it
