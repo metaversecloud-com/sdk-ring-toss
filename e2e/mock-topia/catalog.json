@@ -1,0 +1,74 @@
+[
+  {
+    "id": "badge-1",
+    "name": "Sharp Shooter",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Sharp Shooter badge",
+    "image_path": "https://example.invalid/badges/1.png"
+  },
+  {
+    "id": "badge-2",
+    "name": "On Fire",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "On Fire badge",
+    "image_path": "https://example.invalid/badges/2.png"
+  },
+  {
+    "id": "badge-3",
+    "name": "Stack Master",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Stack Master badge",
+    "image_path": "https://example.invalid/badges/3.png"
+  },
+  {
+    "id": "badge-4",
+    "name": "Piggyback Pro",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Piggyback Pro badge",
+    "image_path": "https://example.invalid/badges/4.png"
+  },
+  {
+    "id": "badge-5",
+    "name": "Comeback Kid",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Comeback Kid badge",
+    "image_path": "https://example.invalid/badges/5.png"
+  },
+  {
+    "id": "badge-6",
+    "name": "All Miss, No Hit",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "All Miss, No Hit badge",
+    "image_path": "https://example.invalid/badges/6.png"
+  },
+  {
+    "id": "badge-7",
+    "name": "Ring Toss Regular",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Ring Toss Regular badge",
+    "image_path": "https://example.invalid/badges/7.png"
+  },
+  {
+    "id": "badge-8",
+    "name": "Ring Rockstar",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Ring Rockstar badge",
+    "image_path": "https://example.invalid/badges/8.png"
+  },
+  {
+    "id": "badge-9",
+    "name": "Field Day Champion",
+    "type": "BADGE",
+    "status": "ACTIVE",
+    "description": "Field Day Champion badge",
+    "image_path": "https://example.invalid/badges/9.png"
+  }
+]
